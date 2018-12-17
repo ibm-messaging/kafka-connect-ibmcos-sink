@@ -1,0 +1,18 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile 'org.apache.kafka:connect-api:2.0.1'
+  testCompile 'junit:junit:4.12'
+
+}
+
+eclipse.project {
+  natures 'org.springsource.ide.eclipse.gradle.core.nature'
+}
+
