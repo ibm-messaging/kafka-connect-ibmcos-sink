@@ -1,8 +1,11 @@
-package com.ibm.eventstreams.connect.ossink;
+package com.ibm.eventstreams.connect.cossink;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+
+import com.ibm.eventstreams.connect.cossink.OSSinkConnector;
+import com.ibm.eventstreams.connect.cossink.OSSinkTask;
 
 public class OSSinkConnectorTest {
 

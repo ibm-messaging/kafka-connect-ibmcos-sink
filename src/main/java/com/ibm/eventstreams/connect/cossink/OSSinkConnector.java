@@ -1,4 +1,4 @@
-package com.ibm.eventstreams.connect.ossink;
+package com.ibm.eventstreams.connect.cossink;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,14 +66,14 @@ public class OSSinkConnector extends SinkConnector {
     public void stop() {
     }
 
+
     /**
      * Define the configuration for the connector.
      * @return The ConfigDef for this connector.
      */
     @Override
     public ConfigDef config() {
-        ConfigDef def = new ConfigDef();
-        return def;
+        return new OSSinkConnectorConfig();
     }
 
 }

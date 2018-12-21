@@ -1,15 +1,20 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-
+plugins {
+  id 'com.github.johnrengelman.shadow' version '4.0.3'
+  id 'java'
+  id 'eclipse'
+}
 
 repositories {
-  mavenCentral()
+   mavenCentral()
 }
 
 dependencies {
+  compile 'com.eclipsesource.minimal-json:minimal-json:0.9.1'
+  compile 'com.ibm.cos:ibm-cos-java-sdk:2.4.1'
   compile 'org.apache.kafka:connect-api:2.0.1'
-  testCompile 'junit:junit:4.12'
 
+  testCompile 'org.mockito:mockito-all:1.10.19'
+  testCompile 'junit:junit:4.12'
 }
 
 eclipse.project {
