@@ -35,7 +35,7 @@ public class ClientFactoryImpl implements ClientFactory {
     }
 
     @Override
-    public AmazonS3 newClient(String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType)
+    public Client newClient(String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType)
     {
         if (initFailedException != null) {
             throw new ClientFactoryException("COS client failed to initialize due to: " + initFailedException.getMessage());
@@ -76,11 +76,11 @@ public class ClientFactoryImpl implements ClientFactory {
                     "' must be one of: public, or private");
         }
 
-        AWSCredentials credentials = new BasicIBMOAuthCredentials(apiKey, serviceCRN);
+        final AWSCredentials credentials = new BasicIBMOAuthCredentials(apiKey, serviceCRN);
         ClientConfiguration clientConfig = new ClientConfiguration().withRequestTimeout(5000);
         clientConfig.setUseTcpKeepAlive(true);
 
-        AmazonS3 cos = AmazonS3ClientBuilder
+        final AmazonS3 s3 = AmazonS3ClientBuilder
                 .standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .withEndpointConfiguration(new EndpointConfiguration(endpointURL, bucketLocation))
@@ -88,6 +88,6 @@ public class ClientFactoryImpl implements ClientFactory {
                 .withClientConfiguration(clientConfig)
                 .build();
 
-        return cos;
+        return new ClientImpl(s3);
     }
 }

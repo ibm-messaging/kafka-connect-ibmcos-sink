@@ -1,40 +1,41 @@
 package com.ibm.eventstreams.connect.cossink;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.connector.Connector;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 
-import com.ibm.cloud.objectstorage.services.s3.AmazonS3;
-import com.ibm.cloud.objectstorage.services.s3.model.ObjectMetadata;
+import com.ibm.cos.Bucket;
+import com.ibm.cos.Client;
 import com.ibm.cos.ClientFactory;
 import com.ibm.cos.ClientFactoryImpl;
+import com.ibm.eventstreams.connect.cossink.partitionwriter.OSPartitionWriterFactory;
+import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriter;
+import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriterFactory;
 
 public class OSSinkTask extends SinkTask {
 
-    private static final Charset UTF8 = Charset.forName("UTF8");
-
     private final ClientFactory clientFactory;
-    private AmazonS3 client;
-    private String bucketName;
+    private final PartitionWriterFactory pwFactory;
+    private Bucket bucket;
+    private Map<TopicPartition, PartitionWriter> assignedPartitions = new HashMap<>();
 
     // Connect framework requires no-value constructor.
     public OSSinkTask() throws IOException {
-        this(new ClientFactoryImpl());
+        this(new ClientFactoryImpl(), new OSPartitionWriterFactory());
     }
 
-    // For unit test, allows injection of clientFactory.
-    OSSinkTask(ClientFactory clientFactory) {
+    // For unit test, allows for dependency injection.
+    OSSinkTask(ClientFactory clientFactory, PartitionWriterFactory pwFactory) {
         this.clientFactory = clientFactory;
+        this.pwFactory = pwFactory;
     }
 
     /**
@@ -53,15 +54,50 @@ public class OSSinkTask extends SinkTask {
      */
     @Override
     public void start(Map<String, String> props) {
-        bucketName = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
 
         final String apiKey = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
-        final String serviceCRN = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
         final String bucketLocation = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
+        final String bucketName = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
         final String bucketResiliency = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY);
         final String endpointType = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_ENDPOINT_VISIBILITY);
+        final String serviceCRN = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
 
-        client = clientFactory.newClient(apiKey, serviceCRN, bucketLocation, bucketResiliency, endpointType);
+        final Client client = clientFactory.newClient(apiKey, serviceCRN, bucketLocation, bucketResiliency, endpointType);
+        bucket = client.bucket(bucketName);
+
+        open(context.assignment());
+    }
+
+    /**
+     * The SinkTask use this method to create writers for newly assigned partitions in case of partition
+     * rebalance. This method will be called after partition re-assignment completes and before the SinkTask starts
+     * fetching data. Note that any errors raised from this method will cause the task to stop.
+     * @param partitions The list of partitions that are now assigned to the task (may include
+     *                   partitions previously assigned to the task)
+     */
+    @Override
+    public void open(Collection<TopicPartition> partitions) {
+        for (TopicPartition tp : partitions) {
+            PartitionWriter pw = pwFactory.newPartitionWriter(bucket);
+            assignedPartitions.put(tp, pw);
+        }
+    }
+
+    /**
+     * The SinkTask use this method to close writers for partitions that are no
+     * longer assigned to the SinkTask. This method will be called before a rebalance operation starts
+     * and after the SinkTask stops fetching data. After being closed, Connect will not write
+     * any records to the task until a new set of partitions has been opened. Note that any errors raised
+     * from this method will cause the task to stop.
+     * @param partitions The list of partitions that should be closed
+     */
+    @Override
+    public void close(Collection<TopicPartition> partitions) {
+        for (TopicPartition tp : partitions) {
+            // TODO: check for unassigned partition?!?
+            assignedPartitions.get(tp).close();
+        }
+        assignedPartitions.clear();
     }
 
     /**
@@ -72,8 +108,8 @@ public class OSSinkTask extends SinkTask {
      */
     @Override
     public void stop() {
-        client = null;
-        bucketName = null;
+        bucket = null;
+        assignedPartitions.clear();
     }
 
     /**
@@ -90,40 +126,32 @@ public class OSSinkTask extends SinkTask {
     @Override
     public void put(Collection<SinkRecord> records) {
         for (final SinkRecord record : records) {
-            final String key = createKey(record);
-            final byte[] value = createValue(record);
-            final ObjectMetadata metadata = createMetadata(key, value);
-
-            client.putObject(bucketName, key, new ByteArrayInputStream(value), metadata);
+            final TopicPartition tp = new TopicPartition(record.topic(), record.kafkaPartition());
+            // TODO: check for assigned partition?!?
+            assignedPartitions.get(tp).put(record);
         }
     }
 
-    private static String createKey(final SinkRecord record) {
-        return String.format("%4d-%d", record.kafkaPartition(), record.kafkaOffset());
-    }
-
-    private static byte[] createValue(final SinkRecord record) {
-        final Schema schema = record.valueSchema();
-        byte[] result = null;
-        if (schema == null || schema.type() == Type.BYTES) {
-            if (record.value() instanceof byte[]) {
-                result = (byte[])record.value();
-            } else if (record.value() instanceof ByteBuffer) {
-                final ByteBuffer bb = (ByteBuffer)record.value();
-                result = new byte[bb.remaining()];
-                bb.get(result);
-            }
-        }
-
-        if (result == null) {
-            result = record.value().toString().getBytes(UTF8);
-        }
-        return result;
-    }
-
-    private static ObjectMetadata createMetadata(final String key, final byte[] value) {
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(value.length);
-        return metadata;
+    /**
+     * Pre-commit hook invoked prior to an offset commit.
+     *
+     * The default implementation simply invokes {@link #flush(Map)} and is thus able to assume all {@code currentOffsets} are safe to commit.
+     *
+     * @param currentOffsets the current offset state as of the last call to {@link #put(Collection)}},
+     *                       provided for convenience but could also be determined by tracking all offsets included in the {@link SinkRecord}s
+     *                       passed to {@link #put}.
+     *
+     * @return an empty map if Connect-managed offset commit is not desired, otherwise a map of offsets by topic-partition that are safe to commit.
+     */
+    @Override
+    public Map<TopicPartition, OffsetAndMetadata> preCommit(Map<TopicPartition, OffsetAndMetadata> offsets) {
+      final Map<TopicPartition, OffsetAndMetadata> result = new HashMap<>();
+      for (Map.Entry<TopicPartition, PartitionWriter> entry : assignedPartitions.entrySet()) {
+          final Long offset = entry.getValue().preCommit();
+          if (offset != null) {
+              result.put(entry.getKey(), new OffsetAndMetadata(offset));
+          }
+      }
+      return result;
     }
 }
