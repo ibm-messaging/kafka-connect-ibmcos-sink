@@ -25,17 +25,20 @@ public class OSSinkTask extends SinkTask {
     private final ClientFactory clientFactory;
     private final PartitionWriterFactory pwFactory;
     private Bucket bucket;
-    private Map<TopicPartition, PartitionWriter> assignedPartitions = new HashMap<>();
+    private Map<TopicPartition, PartitionWriter> assignedWriters;
 
     // Connect framework requires no-value constructor.
     public OSSinkTask() throws IOException {
-        this(new ClientFactoryImpl(), new OSPartitionWriterFactory());
+        this(new ClientFactoryImpl(), new OSPartitionWriterFactory(), new HashMap<>());
     }
 
     // For unit test, allows for dependency injection.
-    OSSinkTask(ClientFactory clientFactory, PartitionWriterFactory pwFactory) {
+    OSSinkTask(
+            ClientFactory clientFactory, PartitionWriterFactory pwFactory,
+            Map<TopicPartition, PartitionWriter> assignedWriters) {
         this.clientFactory = clientFactory;
         this.pwFactory = pwFactory;
+        this.assignedWriters = assignedWriters;
     }
 
     /**
@@ -78,8 +81,12 @@ public class OSSinkTask extends SinkTask {
     @Override
     public void open(Collection<TopicPartition> partitions) {
         for (TopicPartition tp : partitions) {
-            PartitionWriter pw = pwFactory.newPartitionWriter(bucket);
-            assignedPartitions.put(tp, pw);
+            if (assignedWriters.containsKey(tp)) {
+                // TODO: log
+            } else {
+                PartitionWriter pw = pwFactory.newPartitionWriter(bucket);
+                assignedWriters.put(tp, pw);
+            }
         }
     }
 
@@ -94,10 +101,13 @@ public class OSSinkTask extends SinkTask {
     @Override
     public void close(Collection<TopicPartition> partitions) {
         for (TopicPartition tp : partitions) {
-            // TODO: check for unassigned partition?!?
-            assignedPartitions.get(tp).close();
+            final PartitionWriter pw = assignedWriters.remove(tp);
+            if (pw == null) {
+                // TODO: log
+            } else {
+                pw.close();
+            }
         }
-        assignedPartitions.clear();
     }
 
     /**
@@ -109,7 +119,7 @@ public class OSSinkTask extends SinkTask {
     @Override
     public void stop() {
         bucket = null;
-        assignedPartitions.clear();
+        assignedWriters.clear();
     }
 
     /**
@@ -127,8 +137,12 @@ public class OSSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> records) {
         for (final SinkRecord record : records) {
             final TopicPartition tp = new TopicPartition(record.topic(), record.kafkaPartition());
-            // TODO: check for assigned partition?!?
-            assignedPartitions.get(tp).put(record);
+            final PartitionWriter pw = assignedWriters.get(tp);
+            if (pw == null) {
+                // TODO: log
+            } else {
+                assignedWriters.get(tp).put(record);
+            }
         }
     }
 
@@ -146,7 +160,7 @@ public class OSSinkTask extends SinkTask {
     @Override
     public Map<TopicPartition, OffsetAndMetadata> preCommit(Map<TopicPartition, OffsetAndMetadata> offsets) {
       final Map<TopicPartition, OffsetAndMetadata> result = new HashMap<>();
-      for (Map.Entry<TopicPartition, PartitionWriter> entry : assignedPartitions.entrySet()) {
+      for (Map.Entry<TopicPartition, PartitionWriter> entry : assignedWriters.entrySet()) {
           final Long offset = entry.getValue().preCommit();
           if (offset != null) {
               result.put(entry.getKey(), new OffsetAndMetadata(offset));
@@ -154,4 +168,5 @@ public class OSSinkTask extends SinkTask {
       }
       return result;
     }
+
 }
