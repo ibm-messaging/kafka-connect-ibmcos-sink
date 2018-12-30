@@ -47,7 +47,7 @@ public class OSSinkTaskTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
 
-        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(Mockito.any(Bucket.class)))
+        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(Mockito.anyInt(), Mockito.any(Bucket.class)))
         .thenAnswer(new Answer<PartitionWriter>() {
             @Override
             public PartitionWriter answer(InvocationOnMock invocation) throws Throwable {
@@ -88,7 +88,10 @@ public class OSSinkTaskTest {
     @Test
     public void startCreatesBucket() {
         task.initialize(Mockito.mock(SinkTaskContext.class));
-        task.start(new HashMap<>());
+
+        Map<String, String> config = new HashMap<>();
+        config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
+        task.start(config);
 
         Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
     }
@@ -104,7 +107,10 @@ public class OSSinkTaskTest {
             Mockito.when(mockContext.assignment()).thenReturn(tp);
 
             task.initialize(mockContext);
-            task.start(new HashMap<>());
+
+            Map<String, String> config = new HashMap<>();
+            config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
+            task.start(config);
 
             Collection<TopicPartition> assignedTp = assignedWriters.keySet();
             assertCollectionsEqual(tp, assignedTp);

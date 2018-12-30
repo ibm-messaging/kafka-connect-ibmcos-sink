@@ -8,8 +8,8 @@ public class OSPartitionWriterFactory implements PartitionWriterFactory {
     }
 
     @Override
-    public PartitionWriter newPartitionWriter(final Bucket bucket) {
-        return new OSPartitionWriter(bucket);
+    public PartitionWriter newPartitionWriter(final int recordsPerObject, final Bucket bucket) {
+        return new OSPartitionWriter(recordsPerObject, bucket);
     }
 
 }

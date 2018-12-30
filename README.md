@@ -54,8 +54,7 @@ $ gradle shadowJar
           from Kafka, and writing all of the records read so far into an object
           storage object.
 
-- `os.object.records` _(optional)_ - :construction: not implemented yet
-          :construction: The maximum number of Kafka records to
+- `os.object.records` _(optional)_ - The maximum number of Kafka records to
           combine into a object.
 
 - `os.service.crn`_(required)_ - CRN for the Object Storage service instance.

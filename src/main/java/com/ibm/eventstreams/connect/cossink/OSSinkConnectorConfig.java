@@ -42,6 +42,11 @@ public class OSSinkConnectorConfig extends ConfigDef {
     static final String CONFIG_VALUE_OS_ENDPOINT_VISIBILITY_PUBLIC = "public";
     static final String CONFIG_VALUE_OS_ENDPOINT_VISIBILITY_PRIVATE = "private";
 
+    static final String CONFIG_NAME_OS_OBJECT_RECORDS = "os.object.records";
+    private static final String CONFIG_DOCUMENTATION_OS_OBJECT_RECORDS =
+            "The maximum number of Kafka records to group together into a single object storage object.";
+    private static final String CONFIG_DISPLAY_OS_OBJECT_RECORDS = "Records per object";
+
     public OSSinkConnectorConfig() {
         define(CONFIG_NAME_OS_API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_API_KEY, CONFIG_GROUP_OS, 1, Width.MEDIUM,
@@ -73,5 +78,9 @@ public class OSSinkConnectorConfig extends ConfigDef {
                 Importance.LOW,
                 CONFIG_DOCUMENTATION_OS_ENDPOINT_VISIBILITY, CONFIG_GROUP_OS, 6, Width.MEDIUM,
                 CONFIG_DISPLAY_OS_ENDPOINT_VISIBILITY);
+
+        define(CONFIG_NAME_OS_OBJECT_RECORDS, Type.INT, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+                CONFIG_DOCUMENTATION_OS_OBJECT_RECORDS, CONFIG_GROUP_OS, 7, Width.MEDIUM,
+                CONFIG_DISPLAY_OS_OBJECT_RECORDS);
     }
 }
