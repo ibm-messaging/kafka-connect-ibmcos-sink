@@ -39,8 +39,7 @@ $ gradle shadowJar
           example from an IBM Cloud Kubernetes Service cluster. The default is
           `public`.
 
-- `os.object.deadline.seconds` _(optional)_ - :construction: not implemented
-          yet :construction: The number of seconds (as measured
+- `os.object.deadline.seconds` _(optional)_ - The number of seconds (as measured
           wall clock time for the Connect Task instance) between reading the
           first record from Kafka, and writing all of the records read so far
           into an object storage object. This can be useful in situations where
@@ -66,7 +65,7 @@ Note that while the configuration properties `os.object.deadline.seconds`,
 
 ## Combining multiple Kafka records into an object
 
-:construction: not implemented yet :construction:
+:construction: partially implemented :construction:
 
 Typically Kafka records are much smaller than the maximum size an object storage
 object. And while it is possible to create an object for each Kafka record this

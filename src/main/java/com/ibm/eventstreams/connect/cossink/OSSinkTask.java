@@ -26,6 +26,7 @@ public class OSSinkTask extends SinkTask {
     private final PartitionWriterFactory pwFactory;
     private Bucket bucket;
     private int recordsPerObject;
+    private int deadlineSec;
     private Map<TopicPartition, PartitionWriter> assignedWriters;
 
     // Connect framework requires no-value constructor.
@@ -70,6 +71,7 @@ public class OSSinkTask extends SinkTask {
         bucket = client.bucket(bucketName);
 
         recordsPerObject = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
+        deadlineSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
 
         open(context.assignment());
     }
@@ -87,7 +89,7 @@ public class OSSinkTask extends SinkTask {
             if (assignedWriters.containsKey(tp)) {
                 // TODO: log
             } else {
-                PartitionWriter pw = pwFactory.newPartitionWriter(recordsPerObject, bucket);
+                PartitionWriter pw = pwFactory.newPartitionWriter(deadlineSec, recordsPerObject, bucket);
                 assignedWriters.put(tp, pw);
             }
         }

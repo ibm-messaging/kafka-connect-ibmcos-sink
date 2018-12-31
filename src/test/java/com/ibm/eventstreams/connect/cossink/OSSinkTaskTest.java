@@ -47,7 +47,8 @@ public class OSSinkTaskTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
 
-        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(Mockito.anyInt(), Mockito.any(Bucket.class)))
+        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(
+                Mockito.anyInt(), Mockito.anyInt(), Mockito.any(Bucket.class)))
         .thenAnswer(new Answer<PartitionWriter>() {
             @Override
             public PartitionWriter answer(InvocationOnMock invocation) throws Throwable {
@@ -91,6 +92,7 @@ public class OSSinkTaskTest {
 
         Map<String, String> config = new HashMap<>();
         config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
+        config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
         task.start(config);
 
         Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -110,6 +112,7 @@ public class OSSinkTaskTest {
 
             Map<String, String> config = new HashMap<>();
             config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
+            config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
             task.start(config);
 
             Collection<TopicPartition> assignedTp = assignedWriters.keySet();

@@ -1,47 +1,106 @@
 package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.ibm.cos.Bucket;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineCanceller;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineListener;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineServiceImpl;
 
-class OSPartitionWriter implements PartitionWriter {
+class OSPartitionWriter extends RequestProcessor<RequestType> implements DeadlineListener, PartitionWriter {
 
-    private final Bucket bucket;
+    private final int deadlineSec;
     private final int recordsPerObject;
+    private final Bucket bucket;
+    private final DeadlineService deadlineService;
+
     private OSObject osObject;
+    private Long objectCount = 0L;
+    private DeadlineCanceller deadlineCancller;
 
-    private Long lastOffset;
+    private AtomicReference<Long> lastOffset = new AtomicReference<>();
 
-    OSPartitionWriter(final int recordsPerObject, final Bucket bucket) {
+    OSPartitionWriter(final int deadlineSec, final int recordsPerObject, final Bucket bucket) {
+        this(deadlineSec, recordsPerObject, bucket, new DeadlineServiceImpl());
+    }
+
+    // Constructor for unit test.
+    OSPartitionWriter(final int deadlineSec, final int recordsPerObject, final Bucket bucket, final DeadlineService deadlineService) {
+        super(RequestType.CLOSE);
+        this.deadlineSec = deadlineSec;
         this.recordsPerObject = recordsPerObject;
         this.bucket = bucket;
+        this.deadlineService = deadlineService;
     }
 
     @Override
     public Long preCommit() {
-        if (lastOffset == null) {
+        Long offset = lastOffset.getAndSet(null);
+        if (offset == null) {
             return null;
         }
         // Commit the offset one beyond the last record processed. This is
         // where processing should resume from if the task fails.
-        return lastOffset + 1;
+        return offset + 1;
     }
 
     @Override
     public void put(final SinkRecord record) {
-        if (osObject == null) {
-            osObject = new OSObject(recordsPerObject);
-        }
-        osObject.put(record);
-        if (osObject.ready()) {
-            osObject.write(bucket);
-            lastOffset = osObject.lastOffset() + 1;
-            osObject = null;
-        }
+        queue(RequestType.PUT, record);
     }
 
     @Override
     public void close() {
-        // Currently a no-op.
+        deadlineService.close();
+        super.close();
     }
+
+    private void sync() {
+        objectCount++;
+        osObject.write(bucket);
+        lastOffset.set(osObject.lastOffset());
+        osObject = null;
+        deadlineCancller = null;
+    }
+
+    @Override
+    void process(RequestType type, Object context) {
+        switch (type) {
+        case CLOSE:
+            break;
+        case PUT:
+            final SinkRecord record = (SinkRecord)context;
+            if (osObject == null) {
+                osObject = new OSObject(recordsPerObject);
+                if (deadlineSec > 0) {
+                    deadlineCancller = deadlineService.schedule(this, deadlineSec, TimeUnit.SECONDS, objectCount);
+                }
+            }
+            osObject.put(record);
+            if (osObject.ready()) {
+                if (deadlineCancller != null) {
+                    deadlineCancller.cancel();
+                }
+                sync();
+            }
+            break;
+        case DEADLINE:
+            final long deadlineObjectCount = (long)context;
+            if (deadlineObjectCount == objectCount) {
+                sync();
+            }
+            break;
+        }
+
+    }
+
+    @Override
+    public void deadlineReached(Object context) {
+        queue(RequestType.DEADLINE, context);
+    }
+
 }

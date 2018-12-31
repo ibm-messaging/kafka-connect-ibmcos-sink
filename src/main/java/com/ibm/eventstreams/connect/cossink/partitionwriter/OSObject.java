@@ -8,7 +8,6 @@ import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.kafka.common.errors.IllegalSaslStateException;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -38,12 +37,12 @@ class OSObject {
     }
 
     boolean ready() {
-        return records.size() >= recordsPerObject;
+        return recordsPerObject > 0 && records.size() >= recordsPerObject;
     }
 
     void write(final Bucket bucket) {
-        if (!ready()) {
-            throw new IllegalSaslStateException("Attempted to write object before it is ready");
+        if (records.size() == 0) {
+            throw new IllegalStateException("Attempting to write an empty object");
         }
 
         // TODO: how should records with a zero length value be handled?
