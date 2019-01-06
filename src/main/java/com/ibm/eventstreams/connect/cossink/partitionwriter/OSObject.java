@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
@@ -20,24 +21,46 @@ class OSObject {
     private static final Charset UTF8 = Charset.forName("UTF8");
 
     private final int recordsPerObject;
+    private final int intervalSec;
     private final List<SinkRecord> records = new LinkedList<>();
+
+    private long intervalStart;
+    private boolean intervalMet;
+    private long currentInterval;
     private Long lastOffset;
 
-    OSObject(final int recordsPerObject) {
+    OSObject(final int recordsPerObject, final int intervalSec) {
         this.recordsPerObject = recordsPerObject;
+        this.intervalSec = intervalSec;
     }
 
 
-    void put(SinkRecord record) {
+    boolean offer(SinkRecord record) {
         if (ready()) {
             throw new IllegalStateException("Record added to object which is already ready");
         }
+
+        if (intervalSec > 0) {
+            if (records.isEmpty()) {
+                // TODO: under what conditions could record.timestamp() return null?
+                intervalStart = record.timestamp();
+            } else {
+                currentInterval = record.timestamp() - intervalStart;
+            }
+
+            if (TimeUnit.SECONDS.convert(currentInterval, TimeUnit.MILLISECONDS) >= intervalSec) {
+                intervalMet = true;
+                return false;
+            }
+        }
+
         records.add(record);
         lastOffset = record.kafkaOffset();
+        return true;
     }
 
     boolean ready() {
-        return recordsPerObject > 0 && records.size() >= recordsPerObject;
+        return intervalMet || (recordsPerObject > 0 && records.size() >= recordsPerObject);
     }
 
     void write(final Bucket bucket) {

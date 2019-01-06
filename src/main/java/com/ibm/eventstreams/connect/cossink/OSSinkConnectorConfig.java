@@ -50,9 +50,14 @@ public class OSSinkConnectorConfig extends ConfigDef {
     static final String CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS = "os.object.deadline.seconds";
     private static final String CONFIG_DOCUMENTATION_OS_OBJECT_DEADLINE_SECONDS =
             "The maximum period of (wall clock) time between the connector receiving a Kafka record and the " +
-            "connector writing all of the Kafka records it has received so far into an object storage object";
+            "connector writing all of the Kafka records it has received so far into an object storage object.";
     private static final String CONFIG_DISPLAY_OS_OBJECT_DEADLINE_SECONDS = "Object deadline seconds";
 
+    static final String CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS = "os.object.interval.seconds";
+    private static final String CONFIG_DOCUMENTATION_OS_OBJECT_INTERVAL_SECONDS =
+            "The maximum interval (based on Kafka record timestamp) between the first Kafka record to write into an " +
+            "object and the last.";
+    private static final String CONFIG_DISPLAY_OS_OBJECT_INTERVAL_SECONDS = "Object interval seconds";
 
     public OSSinkConnectorConfig() {
         define(CONFIG_NAME_OS_API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
@@ -86,12 +91,16 @@ public class OSSinkConnectorConfig extends ConfigDef {
                 CONFIG_DOCUMENTATION_OS_ENDPOINT_VISIBILITY, CONFIG_GROUP_OS, 6, Width.MEDIUM,
                 CONFIG_DISPLAY_OS_ENDPOINT_VISIBILITY);
 
-        define(CONFIG_NAME_OS_OBJECT_RECORDS, Type.INT, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+        define(CONFIG_NAME_OS_OBJECT_RECORDS, Type.INT, -1, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_OBJECT_RECORDS, CONFIG_GROUP_OS, 7, Width.MEDIUM,
                 CONFIG_DISPLAY_OS_OBJECT_RECORDS);
 
-        define(CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, Type.INT, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+        define(CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, Type.INT, -1, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_OBJECT_DEADLINE_SECONDS, CONFIG_GROUP_OS, 8, Width.MEDIUM,
                 CONFIG_DISPLAY_OS_OBJECT_DEADLINE_SECONDS);
+
+        define(CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, Type.INT, -1, Importance.HIGH,
+                CONFIG_DOCUMENTATION_OS_OBJECT_INTERVAL_SECONDS, CONFIG_GROUP_OS, 9, Width.MEDIUM,
+                CONFIG_DISPLAY_OS_OBJECT_INTERVAL_SECONDS);
     }
 }

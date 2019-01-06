@@ -14,6 +14,7 @@ import java.util.Set;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTaskContext;
 import org.junit.Before;
@@ -48,7 +49,7 @@ public class OSSinkTaskTest {
         MockitoAnnotations.initMocks(this);
 
         Mockito.when(mockPartitionWriterFactory.newPartitionWriter(
-                Mockito.anyInt(), Mockito.anyInt(), Mockito.any(Bucket.class)))
+                Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),Mockito.any(Bucket.class)))
         .thenAnswer(new Answer<PartitionWriter>() {
             @Override
             public PartitionWriter answer(InvocationOnMock invocation) throws Throwable {
@@ -93,6 +94,7 @@ public class OSSinkTaskTest {
         Map<String, String> config = new HashMap<>();
         config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
         config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
+        config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
         task.start(config);
 
         Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -113,6 +115,7 @@ public class OSSinkTaskTest {
             Map<String, String> config = new HashMap<>();
             config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
             config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
+            config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
             task.start(config);
 
             Collection<TopicPartition> assignedTp = assignedWriters.keySet();
@@ -313,5 +316,16 @@ public class OSSinkTaskTest {
         expected.put(tp0, new OffsetAndMetadata(1L));
 
         assertEquals(expected, task.preCommit(null));
+    }
+
+    // At least one of 'os.object.records', 'os.object.deadline.seconds', or 'os.object.interval.seconds'
+    // must have a value which is greater than zero. This is validated in the start() method.
+    @Test(expected=ConfigException.class)
+    public void startThrowsConfigExceptionIfObjectSizeConfigAllUnset() {
+        Map<String, String> props = new HashMap<>();
+        props.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "-1");
+        props.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
+        props.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
+        task.start(props);
     }
 }

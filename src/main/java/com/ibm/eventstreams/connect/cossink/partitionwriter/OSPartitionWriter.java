@@ -14,6 +14,7 @@ import com.ibm.eventstreams.connect.cossink.deadline.DeadlineServiceImpl;
 class OSPartitionWriter extends RequestProcessor<RequestType> implements DeadlineListener, PartitionWriter {
 
     private final int deadlineSec;
+    private final int intervalSec;
     private final int recordsPerObject;
     private final Bucket bucket;
     private final DeadlineService deadlineService;
@@ -24,14 +25,15 @@ class OSPartitionWriter extends RequestProcessor<RequestType> implements Deadlin
 
     private AtomicReference<Long> lastOffset = new AtomicReference<>();
 
-    OSPartitionWriter(final int deadlineSec, final int recordsPerObject, final Bucket bucket) {
-        this(deadlineSec, recordsPerObject, bucket, new DeadlineServiceImpl());
+    OSPartitionWriter(final int deadlineSec, final int intervalSec, final int recordsPerObject, final Bucket bucket) {
+        this(deadlineSec, intervalSec, recordsPerObject, bucket, new DeadlineServiceImpl());
     }
 
     // Constructor for unit test.
-    OSPartitionWriter(final int deadlineSec, final int recordsPerObject, final Bucket bucket, final DeadlineService deadlineService) {
+    OSPartitionWriter(final int deadlineSec, final int intervalSec, final int recordsPerObject, final Bucket bucket, final DeadlineService deadlineService) {
         super(RequestType.CLOSE);
         this.deadlineSec = deadlineSec;
+        this.intervalSec = intervalSec;
         this.recordsPerObject = recordsPerObject;
         this.bucket = bucket;
         this.deadlineService = deadlineService;
@@ -74,18 +76,22 @@ class OSPartitionWriter extends RequestProcessor<RequestType> implements Deadlin
             break;
         case PUT:
             final SinkRecord record = (SinkRecord)context;
-            if (osObject == null) {
-                osObject = new OSObject(recordsPerObject);
-                if (deadlineSec > 0) {
-                    deadlineCancller = deadlineService.schedule(this, deadlineSec, TimeUnit.SECONDS, objectCount);
+            boolean accepted = false;
+
+            while(!accepted) {
+                if (osObject == null) {
+                    osObject = new OSObject(recordsPerObject, intervalSec);
+                    if (deadlineSec > 0) {
+                        deadlineCancller = deadlineService.schedule(this, deadlineSec, TimeUnit.SECONDS, objectCount);
+                    }
                 }
-            }
-            osObject.put(record);
-            if (osObject.ready()) {
-                if (deadlineCancller != null) {
-                    deadlineCancller.cancel();
+                accepted = osObject.offer(record);
+                if (osObject.ready()) {
+                    if (deadlineCancller != null) {
+                        deadlineCancller.cancel();
+                    }
+                    sync();
                 }
-                sync();
             }
             break;
         case DEADLINE:

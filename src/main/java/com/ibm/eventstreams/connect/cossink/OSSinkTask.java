@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -27,6 +28,7 @@ public class OSSinkTask extends SinkTask {
     private Bucket bucket;
     private int recordsPerObject;
     private int deadlineSec;
+    private int intervalSec;
     private Map<TopicPartition, PartitionWriter> assignedWriters;
 
     // Connect framework requires no-value constructor.
@@ -70,8 +72,31 @@ public class OSSinkTask extends SinkTask {
         final Client client = clientFactory.newClient(apiKey, serviceCRN, bucketLocation, bucketResiliency, endpointType);
         bucket = client.bucket(bucketName);
 
-        recordsPerObject = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
-        deadlineSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
+        try {
+            recordsPerObject = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
+        } catch(NumberFormatException e) {
+            recordsPerObject = -1;
+        }
+
+        try {
+            deadlineSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
+        } catch(NumberFormatException e) {
+            deadlineSec = -1;
+        }
+
+        try {
+            intervalSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
+        }  catch(NumberFormatException e) {
+            intervalSec = -1;
+        }
+
+        if (recordsPerObject <= 0 && deadlineSec <= 0 && intervalSec <= 0) {
+            throw new ConfigException(
+                    "At least one of: '" + OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS + "', " +
+                            OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS + "', or '" +
+                            OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS + "' must be set " +
+                            "to a value that is greater than zero");
+        }
 
         open(context.assignment());
     }
@@ -89,7 +114,7 @@ public class OSSinkTask extends SinkTask {
             if (assignedWriters.containsKey(tp)) {
                 // TODO: log
             } else {
-                PartitionWriter pw = pwFactory.newPartitionWriter(deadlineSec, recordsPerObject, bucket);
+                PartitionWriter pw = pwFactory.newPartitionWriter(deadlineSec, intervalSec, recordsPerObject, bucket);
                 assignedWriters.put(tp, pw);
             }
         }

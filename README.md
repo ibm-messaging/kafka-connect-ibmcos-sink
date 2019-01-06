@@ -47,8 +47,7 @@ $ gradle shadowJar
           as it ensures that any records received by this connector will always
           be written into object storage within the specified period of time.
 
-- `os.object.interval.seconds` _(optional)_ - :construction: not implemented
-          yet :construction: The number of seconds (as measured
+- `os.object.interval.seconds` _(optional)_ - The number of seconds (as measured
           by the timestamps in Kafka records) between reading the first record
           from Kafka, and writing all of the records read so far into an object
           storage object.
@@ -64,8 +63,6 @@ Note that while the configuration properties `os.object.deadline.seconds`,
 
 
 ## Combining multiple Kafka records into an object
-
-:construction: partially implemented :construction:
 
 Typically Kafka records are much smaller than the maximum size an object storage
 object. And while it is possible to create an object for each Kafka record this
