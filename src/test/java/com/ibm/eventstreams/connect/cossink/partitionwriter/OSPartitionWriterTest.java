@@ -2,34 +2,54 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import com.ibm.cloud.objectstorage.AmazonServiceException;
 import com.ibm.cloud.objectstorage.SdkClientException;
 import com.ibm.cloud.objectstorage.services.s3.model.ObjectMetadata;
 import com.ibm.cloud.objectstorage.services.s3.model.PutObjectResult;
 import com.ibm.cos.Bucket;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineCanceller;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineListener;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
-
+import com.ibm.eventstreams.connect.cossink.completion.AsyncCompleter;
+import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+import com.ibm.eventstreams.connect.cossink.completion.FirstResult;
+import com.ibm.eventstreams.connect.cossink.completion.NextResult;
+import com.ibm.eventstreams.connect.cossink.completion.ObjectCompletionCriteria;
 
 public class OSPartitionWriterTest {
+
+    @Mock ObjectCompletionCriteria criteria;
+    private MockBucket mockBucket;
+    private CompletionCriteriaSet criteriaSet;
+    private OSPartitionWriter writer;
+
+    @Before
+    public void before() {
+        MockitoAnnotations.initMocks(this);
+        mockBucket = new MockBucket();
+        criteriaSet = new CompletionCriteriaSet();
+        writer = new OSPartitionWriter(mockBucket, criteriaSet);
+    }
+
+    private SinkRecord sinkRecord(
+            String topic, int partition, byte[] value, int offset) {
+        return new SinkRecord(topic, partition, null, null, null, value, offset);
+    }
 
     private class MockBucket implements Bucket {
 
@@ -66,385 +86,239 @@ public class OSPartitionWriterTest {
         }
     }
 
-    private class MockDeadlineService implements DeadlineService {
-
-        private final List<Object> contexts = new LinkedList<>();
-        private DeadlineCanceller lastCanceller;
-
-        @Override
-        public DeadlineCanceller schedule(DeadlineListener listener, long time, TimeUnit unit, Object context) {
-            contexts.add(context);
-            lastCanceller = Mockito.mock(DeadlineCanceller.class);
-            return lastCanceller;
-        }
-
-        @Override
-        public void close() {}
-
-        private boolean hasContext() {
-            return !contexts.isEmpty();
-        }
-
-        private Object popContext() {
-            assertFalse(contexts.isEmpty());
-            return contexts.remove(contexts.size()-1);
-        }
-
-        private DeadlineCanceller lastCanceller() {
-            return lastCanceller;
-        }
-    }
-
-    // When only the 'os.object.records' property is set, objects are written
-    // at the point the record count is met.
+    // Calling put() with criteria that return FirstResult.COMPLETE for
+    // each record results in an object being written with the contents of
+    // the SinkRecord passed into put().
     @Test
-    public void objectWrittenWhenRecordCountReached() {
-        final int objectRecords = 3;
+    public void putFirstReturnsComplete() {
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.COMPLETE);
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        DeadlineService mockDeadlineService = Mockito.mock(DeadlineService.class);
-        OSPartitionWriter writer = new OSPartitionWriter(
-                -1, -1, objectRecords, mockBucket, mockDeadlineService);
-
-        for (int i = 0; i < objectRecords * 10; i++) {
-            writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)i}, i));
-        }
-
-        assertEquals(10, mockBucket.putCount());
-
-        int count = 0;
-        for (byte[] data : mockBucket.objects()) {
-            assertEquals(objectRecords, data.length);
-            for (byte b : data) {
-                assertEquals(count, b);
-                count++;
-            }
-        }
-    }
-
-    // When only the 'os.object.deadline.seconds' property is set, objects are
-    // written at the point the deadline is reached.
-    @Test
-    public void objectWrittenWhenDeadlineReached() {
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, -1, mockBucket, mockDeadlineService);
-
-        for (int i = 0; i < 5; i++) {
-            writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)i}, i));
-        }
-
-        assertEquals(0, mockBucket.putCount);
-
-        Object context = mockDeadlineService.popContext();
-        writer.deadlineReached(context);
-
-        assertEquals(1, mockBucket.putCount);
-        assertArrayEquals(new byte[]{0, 1, 2, 3, 4}, mockBucket.objects().get(0));
-    }
-
-    // When using 'os.object.deadline.seconds' verify that the deadline is started at the
-    // point the first record that will make up a new object is received.
-    @Test
-    public void deadlineStartsAtFirstRecordForNewObject() {
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, -1, mockBucket, mockDeadlineService);
-
-        for (int i = 0; i < 50; i++) {
-            if (i % 5 == 0) {
-                if (i > 0) {
-                    writer.deadlineReached(mockDeadlineService.popContext());
-                }
-                assertFalse(mockDeadlineService.hasContext());
-            } else {
-                assertTrue(mockDeadlineService.hasContext());
-            }
-            writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)i}, i));
-        }
-    }
-
-    private SinkRecord sinkRecord(
-            String topic, int partition, byte[] value, int offset) {
-            return new SinkRecord(topic, partition, null, null, null, value, offset);
-    }
-
-    private SinkRecord sinkRecord(
-            String topic, int partition, byte[] value, int offset, long timestamp) {
-        return new SinkRecord(
-                topic, partition, null, null, null, value, offset,
-                timestamp, TimestampType.CREATE_TIME);
-    }
-
-    // When only the 'os.object.interval.seconds' property is set, objects are written
-    // at the point the point the interval is met.
-    @Test
-    public void objectwrittenWhenIntervalReached() {
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                -1, 5, -1, mockBucket, mockDeadlineService);
-
-        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0, 10000));
-        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1, 11000));    // one second later
-        writer.put(sinkRecord("topic", 0, new byte[]{2}, 2, 13000));    // three seconds later
-        writer.put(sinkRecord("topic", 0, new byte[]{3}, 3, 14999));    // 4.999 seconds later
-        writer.put(sinkRecord("topic", 0, new byte[]{4}, 4, 15000));    // 5 seconds later (new object)
-        writer.put(sinkRecord("topic", 0, new byte[]{5}, 5, 30000));    // 20 seconds (new object)
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
+        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1));
 
         assertEquals(2, mockBucket.putCount());
-        assertArrayEquals(new byte[]{0, 1, 2, 3}, mockBucket.objects().get(0));
-        assertArrayEquals(new byte[]{4}, mockBucket.objects().get(1));
+        assertArrayEquals(new byte[]{0}, mockBucket.objects().get(0));
+        assertArrayEquals(new byte[]{1}, mockBucket.objects().get(1));
     }
 
-    // If both the 'os.object.records' and 'os.object.deadline.seconds' properties are set
-    // then if an object is completed because there are sufficient records, the deadline should
-    // be cancelled.
+    // Calling put() with criteria that returns FirstResult.INCOMPLETE results
+    // in no object being written.
     @Test
-    public void deadlineCancelledIfObjectStoredBecauseOfRecordCount() {
-        final int objectRecords = 3;
+    public void putFirstReturnsIncomplete() {
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.INCOMPLETE);
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, objectRecords, mockBucket, mockDeadlineService);
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
 
-        // Write enough records for one object to be written.
-        for (int i = 0; i < objectRecords; i++) {
-            writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)i}, i));
-        }
-
-        Mockito.verify(mockDeadlineService.lastCanceller()).cancel();
+        assertEquals(0, mockBucket.putCount());
     }
 
-    // If both the 'os.object.deadline.seconds' and 'os.object.interval.seconds' properties are set
-    // then if an object is completed because the interval has been met, the deadline should
-    // be cancelled.
+    // Calling put() with a criteria that returns FirstResult.INCOMPLETE and
+    // NextResult.COMPLETE_INCLUSIVE will result in objects made up of batches of
+    // two sink records.
     @Test
-    public void deadlineCancelledIfIntervalMetFirst() {
-        final int recordInterval = 3;
+    public void putFirstReturnsIncompleteNextReturnsCompleteInclusive() {
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.INCOMPLETE);
+        Mockito.when(criteria.next(Mockito.any())).thenReturn(NextResult.COMPLETE_INCLUSIVE);
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, recordInterval, -1, mockBucket, mockDeadlineService);
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0)); // 1st object
+        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1));
+        writer.put(sinkRecord("topic", 0, new byte[]{2}, 2)); // 2nd object
+        writer.put(sinkRecord("topic", 0, new byte[]{3}, 3));
+        writer.put(sinkRecord("topic", 0, new byte[]{4}, 4)); // (incomplete) 3rd object
 
-        // Write two records, far enough apart, that it causes an object to be
-        // written into object storage. Store the canceller after writing the first
-        // record, as writing the second record will complete the first object and
-        // create a new canceller for the next object.
-        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0, 10000));
-        DeadlineCanceller canceller = mockDeadlineService.lastCanceller();
-        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1, 10000 + (recordInterval * 1000)));
-
-        // Canceller associated with first object should be cancelled.
-        Mockito.verify(canceller).cancel();
-
-        // Canceller associated with object that is currently being built should not
-        // be cancelled.
-        Mockito.verify(mockDeadlineService.lastCanceller(), Mockito.never()).cancel();
+        assertEquals(2, mockBucket.putCount());
+        assertArrayEquals(new byte[]{0, 1}, mockBucket.objects().get(0));
+        assertArrayEquals(new byte[]{2, 3}, mockBucket.objects().get(1));
     }
 
-    // If both the 'os.object.records' and 'os.object.deadline.seconds' properties
-    // are set then it's possible for the deadline reached notification to be queued
-    // up behind one of the put request that completes the object. Check that this
-    // notification is ignored, as it applies to an object that has already been stored.
+    // Calling put() with a criteria that returns FirstResult.INCOMPLETE and
+    // NextResult.COMPLETE_NON_INCLUSIVE will result in objects composed of a single
+    // sink record. The last sink record put will not be output into an object, as it
+    // sits pending a future call to put() to cause it to be written.
     @Test
-    public void deadlineIgnoredIfObjectStoredDueToRecordCount() {
-        final int objectRecords = 3;
+    public void putFirstReturnsIncompleteNextReturnsCompleteNonInclusive() {
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.INCOMPLETE);
+        Mockito.when(criteria.next(Mockito.any())).thenReturn(NextResult.COMPLETE_NON_INCLUSIVE);
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, objectRecords, mockBucket, mockDeadlineService);
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
+        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1));
+        writer.put(sinkRecord("topic", 0, new byte[]{2}, 2));
 
-        // Write enough records for one object to be written.
-        for (int i = 0; i < objectRecords; i++) {
-            writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)i}, i));
-        }
-
-        // Make a note of the context that the deadline service will call back using.
-        Object context = mockDeadlineService.popContext();
-
-        // Add one more record. This shouldn't be written, but if there is an error in the
-        // code for disregarding deadlines on already written objects, it might be.
-        writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)objectRecords}, objectRecords));
-
-        // Notify the writer that the (old) deadline has been reached.
-        writer.deadlineReached(context);
-
-        // Only one object should have been written, the deadline should have been ignored
-        // and should not have caused a second object to be written.
-        assertEquals(1, mockBucket.putCount);
-        assertArrayEquals(new byte[]{0, 1, 2}, mockBucket.objects().get(0));
+        assertEquals(2, mockBucket.putCount());
+        assertArrayEquals(new byte[]{0}, mockBucket.objects().get(0));
+        assertArrayEquals(new byte[]{1}, mockBucket.objects().get(1));
     }
 
-    // If both the 'os.object.deadline.seconds' and 'os.object.interval.seconds' properties
-    // are set then it's also possible for the deadline reached notification to be queued
-    // up behind one of the put request that completes the object. Check that this
-    // notification is ignored, as it applies to an object that has already been stored.
+    // Calling put() with a criteria that returns FirstResult.INCOMPLETE then
+    // FirstResult.COMPLETE and NextResult.COMPLETE_NON_INCLUSIVE will result in
+    // objects composed of a single sink record. This is to test the code-path
+    // which completes two objects in the second call to put().
     @Test
-    public void deadlineIgnoredIfObjectStoredDueToInterval() {
-        final int objectInterval = 5;
+    public void putFirstReturnsBothNextReturnsCompleteNonInclusive() {
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(
+                FirstResult.INCOMPLETE, FirstResult.COMPLETE);
+        Mockito.when(criteria.next(Mockito.any())).thenReturn(NextResult.COMPLETE_NON_INCLUSIVE);
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, objectInterval, 0, mockBucket, mockDeadlineService);
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
+        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1));
 
-        // Write enough records for one object to be written and make a note
-        // of the context relating to the deadline for this object.
-        // create a new canceller for the next object.
-        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0, 10000));
-        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1, 11000));
-        Object context = mockDeadlineService.popContext();
-        writer.put(sinkRecord("topic", 0, new byte[]{2}, 2, 10000 + (objectInterval * 1000)));
+        assertEquals(2, mockBucket.putCount());
+        assertArrayEquals(new byte[]{0}, mockBucket.objects().get(0));
+        assertArrayEquals(new byte[]{1}, mockBucket.objects().get(1));
+    }
 
-        // Notify the writer that the (old) deadline has been reached.
-        writer.deadlineReached(context);
+    // Calling put() with a criteria that returns FirstResult.INCOMPLETE then
+    // subsequently using the AsyncCompleter to complete the object will result
+    // in an object composed of single sink records.
+    @Test
+    public void useAsyncCompleterToCreateObjects() {
+        final AtomicReference<AsyncCompleter> completerRef = new AtomicReference<>();
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).then(
+                new Answer<FirstResult>() {
+            @Override
+            public FirstResult answer(InvocationOnMock invocation) throws Throwable {
+                completerRef.set(invocation.getArgumentAt(1, AsyncCompleter.class));
+                return FirstResult.INCOMPLETE;
+            }
+        });
+        criteriaSet.add(criteria);
 
-        // Only one object should have been written, the deadline should have been ignored
-        // and should not have caused a second object to be written.
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
+        completerRef.get().asyncComplete();
+
+        assertEquals(1, mockBucket.putCount());
+        assertArrayEquals(new byte[]{0}, mockBucket.objects().get(0));
+    }
+
+    // If an object is completed via a call to put(), but then the
+    // AsyncCompleter.completeAsync() is called, the AsyncCompleter call is
+    // ignored, as the object is already complete.
+    @Test
+    public void asyncCompleterIgnoredIfObjectAlreadyComplete() {
+        final AtomicReference<AsyncCompleter> completerRef = new AtomicReference<>();
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).then(
+                new Answer<FirstResult>() {
+            @Override
+            public FirstResult answer(InvocationOnMock invocation) throws Throwable {
+                completerRef.set(invocation.getArgumentAt(1, AsyncCompleter.class));
+                return FirstResult.INCOMPLETE;
+            }
+        });
+        Mockito.when(criteria.next(Mockito.any())).thenReturn(NextResult.COMPLETE_INCLUSIVE);
+        criteriaSet.add(criteria);
+
+        // Write a sink record. This won't complete the current object.
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
+
+        // Store current completer value at this point, otherwise it will be overwritten
+        // when a new object is started.
+        AsyncCompleter oldCompleter = completerRef.get();
+
+        // Write another sink record. This will complete the current object.
+        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1));
+
+        // Writer a further sink record. This shouldn't be part of any object, but
+        // could get turned into one, if the AsyncCompleter does the wrong thing
+        // and completes the current object.
+        writer.put(sinkRecord("topic", 0, new byte[]{2}, 2));
+
+        oldCompleter.asyncComplete();
+
         assertEquals(1, mockBucket.putCount());
         assertArrayEquals(new byte[]{0, 1}, mockBucket.objects().get(0));
     }
 
-    // If both 'os.object.deadline.seconds' and 'os.object.records' are set then the object
-    // is stored at the point the first of these two criteria is met.
+    // Calling put() with a criteria that returns FirstRecord.INCOMPLETE, then
+    // NextRecord.INCOMPLETE buffers sink records until a value other than NextRecord.INCOMPLETE
+    // is returned, at which point the object is written.
     @Test
-    public void objectStoredWhenEnoughRecordsOrDeadlineMet() {
-        final int objectRecords = 3;
+    public void putFirstReturnsIncompleteAndNextReturnsIncomplete() {
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.INCOMPLETE);
+        Mockito.when(criteria.next(Mockito.any())).thenReturn(
+                NextResult.INCOMPLETE, NextResult.COMPLETE_INCLUSIVE);
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, objectRecords, mockBucket, mockDeadlineService);
-
-        // Write a record
-        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
-
-        // Notify the writer that the deadline was reached
-        writer.deadlineReached(mockDeadlineService.popContext());
-
-        // Write enough records for the 'os.object.records' value to be reached.
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0)); // 1st object
         writer.put(sinkRecord("topic", 0, new byte[]{1}, 1));
         writer.put(sinkRecord("topic", 0, new byte[]{2}, 2));
-        writer.put(sinkRecord("topic", 0, new byte[]{3}, 3));
+        writer.put(sinkRecord("topic", 0, new byte[]{3}, 3)); // 2nd object (incomplete)
 
-        // Two objects should have been written to object storage
-        assertEquals(2, mockBucket.putCount());
-        assertArrayEquals(new byte[]{0}, mockBucket.objects().get(0));
-        assertArrayEquals(new byte[]{1, 2, 3}, mockBucket.objects().get(1));
+        assertEquals(1, mockBucket.putCount());
+        assertArrayEquals(new byte[]{0, 1, 2}, mockBucket.objects().get(0));
     }
 
-    // If both 'os.object.interval.seconds' and 'os.object.records' are set then the object
-    // is stored at the point the first of these two criteria is met.
+    // When a call to put() completes an object, the criteria are notified via a
+    // call to their complete() methods.
     @Test
-    public void objectStoredWhenEnoughRecordsOrIntervalMet() {
-        final int objectInterval = 5;
+    public void criteriaNotifiedWhenPutCompletesObject() {
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.COMPLETE);
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                -1, objectInterval, 5, mockBucket, mockDeadlineService);
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
 
-        // Write enough records for the 'os.object.records' to be reached
-        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0, 10000));
-        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1, 10200));
-        writer.put(sinkRecord("topic", 0, new byte[]{2}, 2, 10400));
-        writer.put(sinkRecord("topic", 0, new byte[]{3}, 3, 10600));
-        writer.put(sinkRecord("topic", 0, new byte[]{4}, 4, 10800));
-
-        // Write enough records for the 'os.object.interval.seconds' value to be reached.
-        writer.put(sinkRecord("topic", 0, new byte[]{5}, 5, 11000));
-        writer.put(sinkRecord("topic", 0, new byte[]{6}, 6, 13000));
-        writer.put(sinkRecord("topic", 0, new byte[]{7}, 7, 16000));
-
-        // Two objects should have been written to object storage
-        assertEquals(2, mockBucket.putCount());
-        assertArrayEquals(new byte[]{0, 1, 2, 3, 4}, mockBucket.objects().get(0));
-        assertArrayEquals(new byte[]{5, 6}, mockBucket.objects().get(1));
+        Mockito.verify(criteria, Mockito.times(1)).complete();
     }
 
-    // If both 'os.object.deadline.seconds' and 'os.object.interval.seconds' are set then
-    // the object is stored at the point the first of these two criteria is met.
+    // When an AsycnCompleter is used to complete an object, the criteria are notified
+    // via a call to their complete() methods.
     @Test
-    public void objectStoredWhenDeadlineOrIntervalMet() {
-        final int objectInterval = 5;
+    public void criteriaNotifiedWhenAsyncCompleteObject() {
+        final AtomicReference<AsyncCompleter> completerRef = new AtomicReference<>();
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).then(
+                new Answer<FirstResult>() {
+            @Override
+            public FirstResult answer(InvocationOnMock invocation) throws Throwable {
+                completerRef.set(invocation.getArgumentAt(1, AsyncCompleter.class));
+                return FirstResult.INCOMPLETE;
+            }
+        });
+        criteriaSet.add(criteria);
 
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, objectInterval, -1, mockBucket, mockDeadlineService);
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0));
+        completerRef.get().asyncComplete();
 
-        // Write a record
-        writer.put(sinkRecord("topic", 0, new byte[]{0}, 0, 10000));
-
-        // Notify the writer that the deadline was reached
-        writer.deadlineReached(mockDeadlineService.popContext());
-
-        // Write enough records for the 'os.object.interval.seconds' value to be reached.
-        writer.put(sinkRecord("topic", 0, new byte[]{1}, 1, 11000));
-        writer.put(sinkRecord("topic", 0, new byte[]{2}, 2, 13000));
-        writer.put(sinkRecord("topic", 0, new byte[]{3}, 3, 16000));
-
-        // Two objects should have been written to object storage
-        assertEquals(2, mockBucket.putCount());
-        assertArrayEquals(new byte[]{0}, mockBucket.objects().get(0));
-        assertArrayEquals(new byte[]{1, 2}, mockBucket.objects().get(1));
+        Mockito.verify(criteria, Mockito.times(1)).complete();
     }
 
     // The result from preCommit() should be null if the writer has not yet written any
     // objects.
     @Test
     public void preCommitReturnsNullIfNoObjectsWritten() {
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, -1, mockBucket, mockDeadlineService);
         assertNull(writer.preCommit());
     }
 
-    // Calling preCommit() after an object has been written should return one past the offset of
-    // the last record that made up the object.
+    // Calling preCommit() after an object has been written should return a value
+    // which is one more than the offset of the last record that made up the last
+    // object written into object storage.
     @Test
-    public void preCommitReturnsLastOffsetPlusOne() {
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, -1, mockBucket, mockDeadlineService);
+    public void preCommitReturnsOneBeyondLastOffset() {
+        final int expectedOffset = 10;
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.COMPLETE);
+        criteriaSet.add(criteria);
 
-        // Write an object containing two records, with the last record being at offset 7.
-        final long lastOffset = 7;
-        writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)0x00}, lastOffset-1));
-        writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)0x00}, lastOffset));
-        writer.deadlineReached(mockDeadlineService.popContext());
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, expectedOffset - 2));
+        writer.put(sinkRecord("topic", 0, new byte[]{1}, expectedOffset - 1));
 
-        assertEquals(lastOffset + 1, (long)writer.preCommit());
+        assertEquals(new Long(expectedOffset), writer.preCommit());
     }
 
     // Calling preCommit() again, before another object has been written should return null to
     // indicate there is no new offset to commit.
     @Test
     public void callingPreCommitBeforeTheNextObjectIsWrittenReturnsNull() {
-        MockBucket mockBucket = new MockBucket();
-        MockDeadlineService mockDeadlineService = new MockDeadlineService();
-        OSPartitionWriter writer = new OSPartitionWriter(
-                10, -1, -1, mockBucket, mockDeadlineService);
+        final int expectedOffset = 10;
+        Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.COMPLETE);
+        criteriaSet.add(criteria);
 
-        writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)0x00}, 0));
-        writer.deadlineReached(mockDeadlineService.popContext());
+        writer.put(sinkRecord("topic", 0, new byte[]{0}, expectedOffset - 2));
+        writer.put(sinkRecord("topic", 0, new byte[]{1}, expectedOffset - 1));
 
-        assertNotNull(writer.preCommit());
-        assertNull(writer.preCommit());
-
-        writer.put(new SinkRecord("topic", 0, null, null, null, new byte[]{(byte)0x00}, 1));
-        writer.deadlineReached(mockDeadlineService.popContext());
-
-        assertNotNull(writer.preCommit());
+        assertEquals(new Long(expectedOffset), writer.preCommit());
         assertNull(writer.preCommit());
     }
-
 }

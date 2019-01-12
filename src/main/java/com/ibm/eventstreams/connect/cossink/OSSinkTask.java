@@ -17,6 +17,12 @@ import com.ibm.cos.Bucket;
 import com.ibm.cos.Client;
 import com.ibm.cos.ClientFactory;
 import com.ibm.cos.ClientFactoryImpl;
+import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+import com.ibm.eventstreams.connect.cossink.completion.DeadlineCriteria;
+import com.ibm.eventstreams.connect.cossink.completion.RecordCountCriteria;
+import com.ibm.eventstreams.connect.cossink.completion.RecordIntervalCriteria;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineServiceImpl;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.OSPartitionWriterFactory;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriter;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriterFactory;
@@ -25,24 +31,26 @@ public class OSSinkTask extends SinkTask {
 
     private final ClientFactory clientFactory;
     private final PartitionWriterFactory pwFactory;
+    private final Map<TopicPartition, PartitionWriter> assignedWriters;
+    private final DeadlineService deadlineService;
+
     private Bucket bucket;
-    private int recordsPerObject;
-    private int deadlineSec;
-    private int intervalSec;
-    private Map<TopicPartition, PartitionWriter> assignedWriters;
+    private final CompletionCriteriaSet completionCriteria = new CompletionCriteriaSet();
 
     // Connect framework requires no-value constructor.
     public OSSinkTask() throws IOException {
-        this(new ClientFactoryImpl(), new OSPartitionWriterFactory(), new HashMap<>());
+        this(new ClientFactoryImpl(), new OSPartitionWriterFactory(), new HashMap<>(), new DeadlineServiceImpl());
     }
 
     // For unit test, allows for dependency injection.
     OSSinkTask(
             ClientFactory clientFactory, PartitionWriterFactory pwFactory,
-            Map<TopicPartition, PartitionWriter> assignedWriters) {
+            Map<TopicPartition, PartitionWriter> assignedWriters,
+            DeadlineService deadlineService) {
         this.clientFactory = clientFactory;
         this.pwFactory = pwFactory;
         this.assignedWriters = assignedWriters;
+        this.deadlineService = deadlineService;
     }
 
     /**
@@ -73,24 +81,30 @@ public class OSSinkTask extends SinkTask {
         bucket = client.bucket(bucketName);
 
         try {
-            recordsPerObject = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
+            int recordsPerObject = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
+            if (recordsPerObject > 0) {
+                completionCriteria.add(new RecordCountCriteria(recordsPerObject));
+            }
         } catch(NumberFormatException e) {
-            recordsPerObject = -1;
         }
 
         try {
-            deadlineSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
+            int deadlineSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
+            if (deadlineSec> 0) {
+                completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
+            }
         } catch(NumberFormatException e) {
-            deadlineSec = -1;
         }
 
         try {
-            intervalSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
+            int intervalSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
+            if (intervalSec > 0) {
+                completionCriteria.add(new RecordIntervalCriteria(intervalSec));
+            }
         }  catch(NumberFormatException e) {
-            intervalSec = -1;
         }
 
-        if (recordsPerObject <= 0 && deadlineSec <= 0 && intervalSec <= 0) {
+        if (completionCriteria.isEmpty()) {
             throw new ConfigException(
                     "At least one of: '" + OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS + "', " +
                             OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS + "', or '" +
@@ -114,7 +128,7 @@ public class OSSinkTask extends SinkTask {
             if (assignedWriters.containsKey(tp)) {
                 // TODO: log
             } else {
-                PartitionWriter pw = pwFactory.newPartitionWriter(deadlineSec, intervalSec, recordsPerObject, bucket);
+                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, completionCriteria);
                 assignedWriters.put(tp, pw);
             }
         }
@@ -138,6 +152,8 @@ public class OSSinkTask extends SinkTask {
                 pw.close();
             }
         }
+
+        deadlineService.close();
     }
 
     /**

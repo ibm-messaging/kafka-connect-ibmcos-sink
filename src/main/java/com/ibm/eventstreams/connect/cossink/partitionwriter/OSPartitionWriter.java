@@ -1,42 +1,28 @@
 package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import com.ibm.cos.Bucket;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineCanceller;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineListener;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineServiceImpl;
+import com.ibm.eventstreams.connect.cossink.completion.AsyncCompleter;
+import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+import com.ibm.eventstreams.connect.cossink.completion.FirstResult;
 
-class OSPartitionWriter extends RequestProcessor<RequestType> implements DeadlineListener, PartitionWriter {
+class OSPartitionWriter extends RequestProcessor<RequestType> implements PartitionWriter {
 
-    private final int deadlineSec;
-    private final int intervalSec;
-    private final int recordsPerObject;
     private final Bucket bucket;
-    private final DeadlineService deadlineService;
+    private final CompletionCriteriaSet completionCriteria;
 
     private OSObject osObject;
     private Long objectCount = 0L;
-    private DeadlineCanceller deadlineCancller;
 
     private AtomicReference<Long> lastOffset = new AtomicReference<>();
 
-    OSPartitionWriter(final int deadlineSec, final int intervalSec, final int recordsPerObject, final Bucket bucket) {
-        this(deadlineSec, intervalSec, recordsPerObject, bucket, new DeadlineServiceImpl());
-    }
-
-    // Constructor for unit test.
-    OSPartitionWriter(final int deadlineSec, final int intervalSec, final int recordsPerObject, final Bucket bucket, final DeadlineService deadlineService) {
+    OSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria) {
         super(RequestType.CLOSE);
-        this.deadlineSec = deadlineSec;
-        this.intervalSec = intervalSec;
-        this.recordsPerObject = recordsPerObject;
         this.bucket = bucket;
-        this.deadlineService = deadlineService;
+        this.completionCriteria = completionCriteria;
     }
 
     @Override
@@ -57,16 +43,32 @@ class OSPartitionWriter extends RequestProcessor<RequestType> implements Deadlin
 
     @Override
     public void close() {
-        deadlineService.close();
         super.close();
     }
 
-    private void sync() {
+    private void writeObject() {
         objectCount++;
         osObject.write(bucket);
         lastOffset.set(osObject.lastOffset());
         osObject = null;
-        deadlineCancller = null;
+        completionCriteria.complete();
+    }
+
+    private void startObject(SinkRecord record) {
+        osObject = new OSObject();
+        osObject.put(record);
+        FirstResult result = completionCriteria.first(record, new AsyncCompleterImpl(this, objectCount));
+        if (result == FirstResult.COMPLETE) {
+            writeObject();
+        }
+    }
+
+    private boolean haveStartedObject() {
+        return osObject != null;
+    }
+
+    private void addToExistingObject(SinkRecord record) {
+        osObject.put(record);
     }
 
     @Override
@@ -74,39 +76,52 @@ class OSPartitionWriter extends RequestProcessor<RequestType> implements Deadlin
         switch (type) {
         case CLOSE:
             break;
+
         case PUT:
             final SinkRecord record = (SinkRecord)context;
-            boolean accepted = false;
-
-            while(!accepted) {
-                if (osObject == null) {
-                    osObject = new OSObject(recordsPerObject, intervalSec);
-                    if (deadlineSec > 0) {
-                        deadlineCancller = deadlineService.schedule(this, deadlineSec, TimeUnit.SECONDS, objectCount);
-                    }
+            if (haveStartedObject()) {
+                switch(completionCriteria.next(record)) {
+                case COMPLETE_INCLUSIVE:
+                    addToExistingObject(record);
+                    writeObject();
+                    break;
+                case COMPLETE_NON_INCLUSIVE:
+                    writeObject();
+                    startObject(record);
+                    break;
+                case INCOMPLETE:
+                    addToExistingObject(record);
+                    break;
                 }
-                accepted = osObject.offer(record);
-                if (osObject.ready()) {
-                    if (deadlineCancller != null) {
-                        deadlineCancller.cancel();
-                    }
-                    sync();
-                }
+            } else {
+                startObject(record);
             }
             break;
+
         case DEADLINE:
             final long deadlineObjectCount = (long)context;
             if (deadlineObjectCount == objectCount) {
-                sync();
+                writeObject();
             }
             break;
         }
-
     }
 
-    @Override
-    public void deadlineReached(Object context) {
-        queue(RequestType.DEADLINE, context);
+    static class AsyncCompleterImpl implements AsyncCompleter {
+
+        private final OSPartitionWriter writer;
+        private final long objectCount;
+
+        AsyncCompleterImpl(OSPartitionWriter writer, long objectCount) {
+            this.writer = writer;
+            this.objectCount = objectCount;
+        }
+
+        @Override
+        public void asyncComplete() {
+            writer.queue(RequestType.DEADLINE, this.objectCount);
+        }
+
     }
 
 }

@@ -26,9 +26,9 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.ibm.cos.Bucket;
 import com.ibm.cos.Client;
 import com.ibm.cos.ClientFactory;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriter;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriterFactory;
 
@@ -40,6 +40,9 @@ public class OSSinkTaskTest {
     @Mock
     PartitionWriterFactory mockPartitionWriterFactory;
 
+    @Mock
+    DeadlineService mockDeadlineService;
+
     private Map<TopicPartition, PartitionWriter> assignedWriters;
 
     private OSSinkTask task;
@@ -48,8 +51,7 @@ public class OSSinkTaskTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
 
-        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(
-                Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),Mockito.any(Bucket.class)))
+        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(Mockito.any(), Mockito.any()))
         .thenAnswer(new Answer<PartitionWriter>() {
             @Override
             public PartitionWriter answer(InvocationOnMock invocation) throws Throwable {
@@ -69,7 +71,8 @@ public class OSSinkTaskTest {
 
         assignedWriters = new HashMap<>();
 
-        task = new OSSinkTask(mockClientFactory, mockPartitionWriterFactory, assignedWriters);
+        task = new OSSinkTask(
+                mockClientFactory, mockPartitionWriterFactory, assignedWriters, mockDeadlineService);
     }
 
     // Comparing collections is error prone as both List and Set implement Collection, but
@@ -328,4 +331,13 @@ public class OSSinkTaskTest {
         props.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
         task.start(props);
     }
+
+    // Closing the SinkTask should also close the instance of the DeadlineService
+    // that the task uses.
+    @Test
+    public void closeClosesDeadlineService() {
+        task.close(new HashSet<TopicPartition>());
+        Mockito.verify(mockDeadlineService).close();
+    }
+
 }
