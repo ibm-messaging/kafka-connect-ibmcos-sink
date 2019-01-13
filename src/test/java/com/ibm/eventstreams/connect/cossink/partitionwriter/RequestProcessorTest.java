@@ -78,11 +78,11 @@ public class RequestProcessorTest {
     }
 
     private class TestRequestThread extends Thread {
-        private final RequestProcessor rp;
+        private final RequestProcessor<TestType> rp;
         private final int id;
         private final int count;
 
-        private TestRequestThread(RequestProcessor rp, int id, int count) {
+        private TestRequestThread(RequestProcessor<TestType> rp, int id, int count) {
             this.rp = rp;
             this.id = id;
             this.count = count;
