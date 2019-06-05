@@ -15,9 +15,15 @@
  */
 package com.ibm.eventstreams.connect.cossink;
 
-import org.apache.kafka.common.config.ConfigDef;
+import java.util.Map;
 
-public class COSSinkConnectorConfig extends ConfigDef {
+import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigDef.Importance;
+import org.apache.kafka.common.config.ConfigDef.Type;
+import org.apache.kafka.common.config.ConfigDef.Width;
+
+public class COSSinkConnectorConfig extends AbstractConfig {
 
     private static final String CONFIG_GROUP_OS = "os";
 
@@ -74,48 +80,56 @@ public class COSSinkConnectorConfig extends ConfigDef {
             "object and the last.";
     private static final String CONFIG_DISPLAY_OS_OBJECT_INTERVAL_SECONDS = "Object interval seconds";
 
-    public COSSinkConnectorConfig() {
-        define(CONFIG_NAME_OS_API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+    public static final ConfigDef CONFIG_DEF = new ConfigDef()
+        .define(CONFIG_NAME_OS_API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_API_KEY, CONFIG_GROUP_OS, 1, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_API_KEY);
+                CONFIG_DISPLAY_OS_API_KEY)
 
-        define(CONFIG_NAME_OS_SERVICE_CRN, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+        .define(CONFIG_NAME_OS_SERVICE_CRN, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_SERVICE_CRN, CONFIG_GROUP_OS, 2, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_SERVICE_CRN);
+                CONFIG_DISPLAY_OS_SERVICE_CRN)
 
-        define(CONFIG_NAME_OS_BUCKET_LOCATION, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+        .define(CONFIG_NAME_OS_BUCKET_LOCATION, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_BUCKET_LOCATION, CONFIG_GROUP_OS, 3, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_BUCKET_LOCATION);
+                CONFIG_DISPLAY_OS_BUCKET_LOCATION)
 
-        define(CONFIG_NAME_OS_BUCKET_NAME, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
+        .define(CONFIG_NAME_OS_BUCKET_NAME, Type.STRING, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_BUCKET_NAME, CONFIG_GROUP_OS, 4, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_BUCKET_NAME);
+                CONFIG_DISPLAY_OS_BUCKET_NAME)
 
-        define(CONFIG_NAME_OS_BUCKET_RESILIENCY, Type.STRING, ConfigDef.NO_DEFAULT_VALUE,
+        .define(CONFIG_NAME_OS_BUCKET_RESILIENCY, Type.STRING, ConfigDef.NO_DEFAULT_VALUE,
                 ConfigDef.ValidString.in(CONFIG_VALUE_OS_BUCKET_RESILIENCY_CROSS_REGION,
                         CONFIG_VALUE_OS_BUCKET_RESILIENCY_SINGLE_SITE,
                         CONFIG_VALUE_OS_BUCKET_RESILIENCY_REGIONAL),
                 Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_BUCKET_RESILIENCY, CONFIG_GROUP_OS, 5, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_BUCKET_RESILIENCY);
+                CONFIG_DISPLAY_OS_BUCKET_RESILIENCY)
 
-        define(CONFIG_NAME_OS_ENDPOINT_VISIBILITY, Type.STRING, CONFIG_VALUE_OS_ENDPOINT_VISIBILITY_PUBLIC,
+        .define(CONFIG_NAME_OS_ENDPOINT_VISIBILITY, Type.STRING, CONFIG_VALUE_OS_ENDPOINT_VISIBILITY_PUBLIC,
                 ConfigDef.ValidString.in(CONFIG_VALUE_OS_ENDPOINT_VISIBILITY_PRIVATE,
                         CONFIG_VALUE_OS_ENDPOINT_VISIBILITY_PUBLIC),
                 Importance.LOW,
                 CONFIG_DOCUMENTATION_OS_ENDPOINT_VISIBILITY, CONFIG_GROUP_OS, 6, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_ENDPOINT_VISIBILITY);
+                CONFIG_DISPLAY_OS_ENDPOINT_VISIBILITY)
 
-        define(CONFIG_NAME_OS_OBJECT_RECORDS, Type.INT, -1, Importance.HIGH,
+        .define(CONFIG_NAME_OS_OBJECT_RECORDS, Type.INT, -1, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_OBJECT_RECORDS, CONFIG_GROUP_OS, 7, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_OBJECT_RECORDS);
+                CONFIG_DISPLAY_OS_OBJECT_RECORDS)
 
-        define(CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, Type.INT, -1, Importance.HIGH,
+        .define(CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, Type.INT, -1, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_OBJECT_DEADLINE_SECONDS, CONFIG_GROUP_OS, 8, Width.MEDIUM,
-                CONFIG_DISPLAY_OS_OBJECT_DEADLINE_SECONDS);
+                CONFIG_DISPLAY_OS_OBJECT_DEADLINE_SECONDS)
 
-        define(CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, Type.INT, -1, Importance.HIGH,
+        .define(CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, Type.INT, -1, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_OBJECT_INTERVAL_SECONDS, CONFIG_GROUP_OS, 9, Width.MEDIUM,
                 CONFIG_DISPLAY_OS_OBJECT_INTERVAL_SECONDS);
+
+    public COSSinkConnectorConfig(ConfigDef definition, Map<?, ?> originals) {
+        super(definition, originals);
     }
+
+    public COSSinkConnectorConfig(Map<String, String> parsedConfig) {
+        this(CONFIG_DEF, parsedConfig);
+    }
+
 }

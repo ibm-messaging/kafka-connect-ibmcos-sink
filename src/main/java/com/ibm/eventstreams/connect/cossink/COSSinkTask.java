@@ -84,39 +84,30 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public void start(Map<String, String> props) {
-
-        final String apiKey = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
-        final String bucketLocation = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
-        final String bucketName = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
-        final String bucketResiliency = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY);
-        final String endpointType = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_ENDPOINT_VISIBILITY);
-        final String serviceCRN = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
+        COSSinkConnectorConfig connectorConfig = new COSSinkConnectorConfig(props);
+        final String apiKey = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
+        final String bucketLocation = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
+        final String bucketName = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
+        final String bucketResiliency = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY);
+        final String endpointType = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_ENDPOINT_VISIBILITY);
+        final String serviceCRN = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
 
         final Client client = clientFactory.newClient(apiKey, serviceCRN, bucketLocation, bucketResiliency, endpointType);
         bucket = client.bucket(bucketName);
 
-        try {
-            int recordsPerObject = Integer.parseInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
-            if (recordsPerObject > 0) {
-                completionCriteria.add(new RecordCountCriteria(recordsPerObject));
-            }
-        } catch(NumberFormatException e) {
+        int recordsPerObject = connectorConfig.getInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
+        if (recordsPerObject > 0) {
+            completionCriteria.add(new RecordCountCriteria(recordsPerObject));
         }
 
-        try {
-            int deadlineSec = Integer.parseInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
-            if (deadlineSec> 0) {
-                completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
-            }
-        } catch(NumberFormatException e) {
+        int deadlineSec = connectorConfig.getInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
+        if (deadlineSec> 0) {
+            completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
         }
 
-        try {
-            int intervalSec = Integer.parseInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
-            if (intervalSec > 0) {
-                completionCriteria.add(new RecordIntervalCriteria(intervalSec));
-            }
-        }  catch(NumberFormatException e) {
+        int intervalSec = connectorConfig.getInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
+        if (intervalSec > 0) {
+            completionCriteria.add(new RecordIntervalCriteria(intervalSec));
         }
 
         if (completionCriteria.isEmpty()) {

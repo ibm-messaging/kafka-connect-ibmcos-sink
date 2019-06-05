@@ -88,7 +88,7 @@ public class COSSinkConnector extends SinkConnector {
      */
     @Override
     public ConfigDef config() {
-        return new COSSinkConnectorConfig();
+        return COSSinkConnectorConfig.CONFIG_DEF;
     }
 
 }
