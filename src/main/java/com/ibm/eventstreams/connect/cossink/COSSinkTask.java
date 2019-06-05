@@ -15,7 +15,6 @@
  */
 package com.ibm.eventstreams.connect.cossink;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,22 +26,23 @@ import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.sink.SinkTaskContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ibm.cos.Bucket;
 import com.ibm.cos.Client;
 import com.ibm.cos.ClientFactory;
-import com.ibm.cos.ClientFactoryImpl;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
 import com.ibm.eventstreams.connect.cossink.completion.DeadlineCriteria;
 import com.ibm.eventstreams.connect.cossink.completion.RecordCountCriteria;
 import com.ibm.eventstreams.connect.cossink.completion.RecordIntervalCriteria;
 import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
-import com.ibm.eventstreams.connect.cossink.deadline.DeadlineServiceImpl;
-import com.ibm.eventstreams.connect.cossink.partitionwriter.COSPartitionWriterFactory;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriter;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriterFactory;
 
 public class COSSinkTask extends SinkTask {
+
+    private static final Logger LOG = LoggerFactory.getLogger(COSSinkTask.class);
 
     private final ClientFactory clientFactory;
     private final PartitionWriterFactory pwFactory;
@@ -51,11 +51,6 @@ public class COSSinkTask extends SinkTask {
 
     private Bucket bucket;
     private final CompletionCriteriaSet completionCriteria = new CompletionCriteriaSet();
-
-    // Connect framework requires no-value constructor.
-    public COSSinkTask() throws IOException {
-        this(new ClientFactoryImpl(), new COSPartitionWriterFactory(), new HashMap<>(), new DeadlineServiceImpl());
-    }
 
     // For unit test, allows for dependency injection.
     COSSinkTask(
@@ -101,7 +96,7 @@ public class COSSinkTask extends SinkTask {
         }
 
         int deadlineSec = connectorConfig.getInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
-        if (deadlineSec> 0) {
+        if (deadlineSec > 0) {
             completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
         }
 
@@ -119,6 +114,7 @@ public class COSSinkTask extends SinkTask {
         }
 
         open(context.assignment());
+        LOG.info("Starting");
     }
 
     /**
@@ -131,9 +127,7 @@ public class COSSinkTask extends SinkTask {
     @Override
     public void open(Collection<TopicPartition> partitions) {
         for (TopicPartition tp : partitions) {
-            if (assignedWriters.containsKey(tp)) {
-                // TODO: log
-            } else {
+            if (!assignedWriters.containsKey(tp)) {
                 PartitionWriter pw = pwFactory.newPartitionWriter(bucket, completionCriteria);
                 assignedWriters.put(tp, pw);
             }
@@ -152,9 +146,7 @@ public class COSSinkTask extends SinkTask {
     public void close(Collection<TopicPartition> partitions) {
         for (TopicPartition tp : partitions) {
             final PartitionWriter pw = assignedWriters.remove(tp);
-            if (pw == null) {
-                // TODO: log
-            } else {
+            if (pw != null) {
                 pw.close();
             }
         }
@@ -170,6 +162,7 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public void stop() {
+        LOG.info("Stopping");
         bucket = null;
         assignedWriters.clear();
     }
@@ -191,7 +184,7 @@ public class COSSinkTask extends SinkTask {
             final TopicPartition tp = new TopicPartition(record.topic(), record.kafkaPartition());
             final PartitionWriter pw = assignedWriters.get(tp);
             if (pw == null) {
-                // TODO: log
+                LOG.error("Unable to find PartitionWriter for {}", tp);
             } else {
                 assignedWriters.get(tp).put(record);
             }
