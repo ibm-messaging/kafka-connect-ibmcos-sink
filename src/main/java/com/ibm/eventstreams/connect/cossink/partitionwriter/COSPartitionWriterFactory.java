@@ -18,15 +18,15 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 import com.ibm.cos.Bucket;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
 
-public class OSPartitionWriterFactory implements PartitionWriterFactory {
+public class COSPartitionWriterFactory implements PartitionWriterFactory {
 
-    public OSPartitionWriterFactory() {
+    public COSPartitionWriterFactory() {
     }
 
     @Override
     public PartitionWriter newPartitionWriter(
             final Bucket bucket, final CompletionCriteriaSet completionCriteria) {
-        return new OSPartitionWriter(bucket, completionCriteria);
+        return new COSPartitionWriter(bucket, completionCriteria);
     }
 
 }

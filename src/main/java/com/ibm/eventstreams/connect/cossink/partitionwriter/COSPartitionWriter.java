@@ -24,17 +24,17 @@ import com.ibm.eventstreams.connect.cossink.completion.AsyncCompleter;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
 import com.ibm.eventstreams.connect.cossink.completion.FirstResult;
 
-class OSPartitionWriter extends RequestProcessor<RequestType> implements PartitionWriter {
+class COSPartitionWriter extends RequestProcessor<RequestType> implements PartitionWriter {
 
     private final Bucket bucket;
     private final CompletionCriteriaSet completionCriteria;
 
-    private OSObject osObject;
+    private COSObject osObject;
     private Long objectCount = 0L;
 
     private AtomicReference<Long> lastOffset = new AtomicReference<>();
 
-    OSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria) {
+    COSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria) {
         super(RequestType.CLOSE);
         this.bucket = bucket;
         this.completionCriteria = completionCriteria;
@@ -70,7 +70,7 @@ class OSPartitionWriter extends RequestProcessor<RequestType> implements Partiti
     }
 
     private void startObject(SinkRecord record) {
-        osObject = new OSObject();
+        osObject = new COSObject();
         osObject.put(record);
         FirstResult result = completionCriteria.first(record, new AsyncCompleterImpl(this, objectCount));
         if (result == FirstResult.COMPLETE) {
@@ -124,10 +124,10 @@ class OSPartitionWriter extends RequestProcessor<RequestType> implements Partiti
 
     static class AsyncCompleterImpl implements AsyncCompleter {
 
-        private final OSPartitionWriter writer;
+        private final COSPartitionWriter writer;
         private final long objectCount;
 
-        AsyncCompleterImpl(OSPartitionWriter writer, long objectCount) {
+        AsyncCompleterImpl(COSPartitionWriter writer, long objectCount) {
             this.writer = writer;
             this.objectCount = objectCount;
         }

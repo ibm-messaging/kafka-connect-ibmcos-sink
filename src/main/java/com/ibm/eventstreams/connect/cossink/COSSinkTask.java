@@ -38,11 +38,11 @@ import com.ibm.eventstreams.connect.cossink.completion.RecordCountCriteria;
 import com.ibm.eventstreams.connect.cossink.completion.RecordIntervalCriteria;
 import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
 import com.ibm.eventstreams.connect.cossink.deadline.DeadlineServiceImpl;
-import com.ibm.eventstreams.connect.cossink.partitionwriter.OSPartitionWriterFactory;
+import com.ibm.eventstreams.connect.cossink.partitionwriter.COSPartitionWriterFactory;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriter;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriterFactory;
 
-public class OSSinkTask extends SinkTask {
+public class COSSinkTask extends SinkTask {
 
     private final ClientFactory clientFactory;
     private final PartitionWriterFactory pwFactory;
@@ -53,12 +53,12 @@ public class OSSinkTask extends SinkTask {
     private final CompletionCriteriaSet completionCriteria = new CompletionCriteriaSet();
 
     // Connect framework requires no-value constructor.
-    public OSSinkTask() throws IOException {
-        this(new ClientFactoryImpl(), new OSPartitionWriterFactory(), new HashMap<>(), new DeadlineServiceImpl());
+    public COSSinkTask() throws IOException {
+        this(new ClientFactoryImpl(), new COSPartitionWriterFactory(), new HashMap<>(), new DeadlineServiceImpl());
     }
 
     // For unit test, allows for dependency injection.
-    OSSinkTask(
+    COSSinkTask(
             ClientFactory clientFactory, PartitionWriterFactory pwFactory,
             Map<TopicPartition, PartitionWriter> assignedWriters,
             DeadlineService deadlineService) {
@@ -75,7 +75,7 @@ public class OSSinkTask extends SinkTask {
      */
     @Override
     public String version() {
-        return OSSinkConnector.VERSION;
+        return COSSinkConnector.VERSION;
     }
 
     /**
@@ -85,18 +85,18 @@ public class OSSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> props) {
 
-        final String apiKey = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
-        final String bucketLocation = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
-        final String bucketName = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
-        final String bucketResiliency = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY);
-        final String endpointType = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_ENDPOINT_VISIBILITY);
-        final String serviceCRN = props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
+        final String apiKey = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
+        final String bucketLocation = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
+        final String bucketName = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
+        final String bucketResiliency = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY);
+        final String endpointType = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_ENDPOINT_VISIBILITY);
+        final String serviceCRN = props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
 
         final Client client = clientFactory.newClient(apiKey, serviceCRN, bucketLocation, bucketResiliency, endpointType);
         bucket = client.bucket(bucketName);
 
         try {
-            int recordsPerObject = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
+            int recordsPerObject = Integer.parseInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
             if (recordsPerObject > 0) {
                 completionCriteria.add(new RecordCountCriteria(recordsPerObject));
             }
@@ -104,7 +104,7 @@ public class OSSinkTask extends SinkTask {
         }
 
         try {
-            int deadlineSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
+            int deadlineSec = Integer.parseInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
             if (deadlineSec> 0) {
                 completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
             }
@@ -112,7 +112,7 @@ public class OSSinkTask extends SinkTask {
         }
 
         try {
-            int intervalSec = Integer.parseInt(props.get(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
+            int intervalSec = Integer.parseInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
             if (intervalSec > 0) {
                 completionCriteria.add(new RecordIntervalCriteria(intervalSec));
             }
@@ -121,9 +121,9 @@ public class OSSinkTask extends SinkTask {
 
         if (completionCriteria.isEmpty()) {
             throw new ConfigException(
-                    "At least one of: '" + OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS + "', " +
-                            OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS + "', or '" +
-                            OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS + "' must be set " +
+                    "At least one of: '" + COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS + "', " +
+                            COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS + "', or '" +
+                            COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS + "' must be set " +
                             "to a value that is greater than zero");
         }
 

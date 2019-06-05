@@ -46,19 +46,19 @@ import com.ibm.eventstreams.connect.cossink.completion.FirstResult;
 import com.ibm.eventstreams.connect.cossink.completion.NextResult;
 import com.ibm.eventstreams.connect.cossink.completion.ObjectCompletionCriteria;
 
-public class OSPartitionWriterTest {
+public class COSPartitionWriterTest {
 
     @Mock ObjectCompletionCriteria criteria;
     private MockBucket mockBucket;
     private CompletionCriteriaSet criteriaSet;
-    private OSPartitionWriter writer;
+    private COSPartitionWriter writer;
 
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
         mockBucket = new MockBucket();
         criteriaSet = new CompletionCriteriaSet();
-        writer = new OSPartitionWriter(mockBucket, criteriaSet);
+        writer = new COSPartitionWriter(mockBucket, criteriaSet);
     }
 
     private SinkRecord sinkRecord(

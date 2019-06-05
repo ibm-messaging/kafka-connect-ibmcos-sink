@@ -23,7 +23,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
 
-public class OSSinkConnector extends SinkConnector {
+public class COSSinkConnector extends SinkConnector {
 
     static final String VERSION = "0.1";
 
@@ -55,7 +55,7 @@ public class OSSinkConnector extends SinkConnector {
      */
     @Override
     public Class<? extends Task> taskClass() {
-        return OSSinkTask.class;
+        return COSSinkTask.class;
     }
 
     /**
@@ -88,7 +88,7 @@ public class OSSinkConnector extends SinkConnector {
      */
     @Override
     public ConfigDef config() {
-        return new OSSinkConnectorConfig();
+        return new COSSinkConnectorConfig();
     }
 
 }

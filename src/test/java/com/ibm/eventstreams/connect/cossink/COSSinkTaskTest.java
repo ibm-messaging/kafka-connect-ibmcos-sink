@@ -47,7 +47,7 @@ import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriter;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriterFactory;
 
-public class OSSinkTaskTest {
+public class COSSinkTaskTest {
 
     @Mock
     ClientFactory mockClientFactory;
@@ -60,7 +60,7 @@ public class OSSinkTaskTest {
 
     private Map<TopicPartition, PartitionWriter> assignedWriters;
 
-    private OSSinkTask task;
+    private COSSinkTask task;
 
     @Before
     public void before() {
@@ -86,7 +86,7 @@ public class OSSinkTaskTest {
 
         assignedWriters = new HashMap<>();
 
-        task = new OSSinkTask(
+        task = new COSSinkTask(
                 mockClientFactory, mockPartitionWriterFactory, assignedWriters, mockDeadlineService);
     }
 
@@ -99,7 +99,7 @@ public class OSSinkTaskTest {
     // OSSinkTask returns the same version number as the connector.
     @Test
     public void version() throws Exception {
-        OSSinkConnector sc = new OSSinkConnector();
+        COSSinkConnector sc = new COSSinkConnector();
 
         assertEquals(sc.version(), task.version());
     }
@@ -110,9 +110,9 @@ public class OSSinkTaskTest {
         task.initialize(Mockito.mock(SinkTaskContext.class));
 
         Map<String, String> config = new HashMap<>();
-        config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
-        config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
-        config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
         task.start(config);
 
         Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -131,9 +131,9 @@ public class OSSinkTaskTest {
             task.initialize(mockContext);
 
             Map<String, String> config = new HashMap<>();
-            config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
-            config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
-            config.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
             task.start(config);
 
             Collection<TopicPartition> assignedTp = assignedWriters.keySet();
@@ -341,9 +341,9 @@ public class OSSinkTaskTest {
     @Test(expected=ConfigException.class)
     public void startThrowsConfigExceptionIfObjectSizeConfigAllUnset() {
         Map<String, String> props = new HashMap<>();
-        props.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "-1");
-        props.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
-        props.put(OSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "-1");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
         task.start(props);
     }
 

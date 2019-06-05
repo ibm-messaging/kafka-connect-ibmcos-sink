@@ -25,20 +25,20 @@ import java.util.Map;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.junit.Test;
 
-public class OSSinkConnectorTest {
+public class COSSinkConnectorTest {
 
     // Test that the connector returns the version number encoded in its version
     // constant.
     @Test
     public void version() {
-        OSSinkConnector sc = new OSSinkConnector();
-        assertEquals(OSSinkConnector.VERSION, sc.version());
+        COSSinkConnector sc = new COSSinkConnector();
+        assertEquals(COSSinkConnector.VERSION, sc.version());
     }
 
     // Test that the connector returns a task class that implements SinkTask.
     @Test
     public void taskClass() {
-        OSSinkConnector sc = new OSSinkConnector();
+        COSSinkConnector sc = new COSSinkConnector();
         Class<?> clazz = sc.taskClass();
         assertTrue(SinkTask.class.isAssignableFrom(clazz));
     }
@@ -50,7 +50,7 @@ public class OSSinkConnectorTest {
         Map<String, String> config = new HashMap<>();
         config.put("test.key", "test.value");
 
-        OSSinkConnector sc = new OSSinkConnector();
+        COSSinkConnector sc = new COSSinkConnector();
         sc.start(config);
         List<Map<String, String>> taskConfigs = sc.taskConfigs(1);
 
@@ -62,7 +62,7 @@ public class OSSinkConnectorTest {
     // entries in the list it returns.
     @Test
     public void taskConfigsReturnsRequestedNumberOfConfigs() {
-        OSSinkConnector sc = new OSSinkConnector();
+        COSSinkConnector sc = new COSSinkConnector();
         sc.start(new HashMap<>());
 
         for (int i=0; i < 10; i++) {

@@ -30,14 +30,14 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import com.ibm.cloud.objectstorage.services.s3.model.ObjectMetadata;
 import com.ibm.cos.Bucket;
 
-class OSObject {
+class COSObject {
 
     private static final Charset UTF8 = Charset.forName("UTF8");
 
     private final List<SinkRecord> records = new LinkedList<>();
     private Long lastOffset;
 
-    OSObject() {
+    COSObject() {
     }
 
 

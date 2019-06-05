@@ -17,7 +17,7 @@ package com.ibm.eventstreams.connect.cossink;
 
 import org.apache.kafka.common.config.ConfigDef;
 
-public class OSSinkConnectorConfig extends ConfigDef {
+public class COSSinkConnectorConfig extends ConfigDef {
 
     private static final String CONFIG_GROUP_OS = "os";
 
@@ -74,7 +74,7 @@ public class OSSinkConnectorConfig extends ConfigDef {
             "object and the last.";
     private static final String CONFIG_DISPLAY_OS_OBJECT_INTERVAL_SECONDS = "Object interval seconds";
 
-    public OSSinkConnectorConfig() {
+    public COSSinkConnectorConfig() {
         define(CONFIG_NAME_OS_API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_OS_API_KEY, CONFIG_GROUP_OS, 1, Width.MEDIUM,
                 CONFIG_DISPLAY_OS_API_KEY);
