@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 IBM Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.ibm.eventstreams.connect.cossink;
 
 import java.io.IOException;
@@ -120,7 +135,7 @@ public class OSSinkTask extends SinkTask {
      * rebalance. This method will be called after partition re-assignment completes and before the SinkTask starts
      * fetching data. Note that any errors raised from this method will cause the task to stop.
      * @param partitions The list of partitions that are now assigned to the task (may include
-     *                   partitions previously assigned to the task)
+     *                 partitions previously assigned to the task)
      */
     @Override
     public void open(Collection<TopicPartition> partitions) {
@@ -198,8 +213,8 @@ public class OSSinkTask extends SinkTask {
      * The default implementation simply invokes {@link #flush(Map)} and is thus able to assume all {@code currentOffsets} are safe to commit.
      *
      * @param currentOffsets the current offset state as of the last call to {@link #put(Collection)}},
-     *                       provided for convenience but could also be determined by tracking all offsets included in the {@link SinkRecord}s
-     *                       passed to {@link #put}.
+     *                     provided for convenience but could also be determined by tracking all offsets included in the {@link SinkRecord}s
+     *                     passed to {@link #put}.
      *
      * @return an empty map if Connect-managed offset commit is not desired, otherwise a map of offsets by topic-partition that are safe to commit.
      */
