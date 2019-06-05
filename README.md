@@ -58,7 +58,7 @@ $ gradle shadowJar
 - `os.service.crn`_(required)_ - CRN for the Object Storage service instance.
 
 Note that while the configuration properties `os.object.deadline.seconds`,
-`os.interval.seconds`, and `os.object.records` are all listed as optional`-
+`os.interval.seconds`, and `os.object.records` are all listed as optional,
 *at least one* of these properties *must* be set to a non-default value.
 
 
