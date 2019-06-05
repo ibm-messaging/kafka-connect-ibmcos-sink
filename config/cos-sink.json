@@ -1,0 +1,21 @@
+{
+    "name": "cos-sink",
+    "config":{
+        "connector.class": "com.ibm.eventstreams.connect.cossink.COSSinkConnector",
+        "tasks.max": "1",
+        "topics": "<TOPIC>",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+
+        "os.api.key": "<COS_APIKEY>",
+        "os.bucket.location": "eu-gb",
+        "os.bucket.name": "<BUCKET_NAME>",
+        "os.bucket.resiliency": "regional",
+        "os.endpoint.visibility": "public",
+
+        "os.object.deadline.seconds": "5",
+        "os.object.interval.seconds": "5",
+        "os.object.records": "5",
+        "os.service.crn": "<COS_CRN>"
+    }
+}
