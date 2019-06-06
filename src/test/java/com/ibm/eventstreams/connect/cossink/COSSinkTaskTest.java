@@ -113,6 +113,11 @@ public class COSSinkTaskTest {
         config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
         config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
         config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY, "APIKEY");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN, "service:instance:crn");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION, "eu-gb");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME, "bucket");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY, "regional");
         task.start(config);
 
         Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -134,6 +139,11 @@ public class COSSinkTaskTest {
             config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
             config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
             config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY, "APIKEY");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN, "service:instance:crn");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION, "eu-gb");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME, "bucket");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY, "regional");
             task.start(config);
 
             Collection<TopicPartition> assignedTp = assignedWriters.keySet();

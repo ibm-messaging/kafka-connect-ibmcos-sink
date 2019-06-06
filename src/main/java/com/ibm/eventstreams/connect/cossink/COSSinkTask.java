@@ -15,6 +15,7 @@
  */
 package com.ibm.eventstreams.connect.cossink;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,7 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.config.types.Password;
 import org.apache.kafka.connect.connector.Connector;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -32,11 +34,14 @@ import org.slf4j.LoggerFactory;
 import com.ibm.cos.Bucket;
 import com.ibm.cos.Client;
 import com.ibm.cos.ClientFactory;
+import com.ibm.cos.ClientFactoryImpl;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
 import com.ibm.eventstreams.connect.cossink.completion.DeadlineCriteria;
 import com.ibm.eventstreams.connect.cossink.completion.RecordCountCriteria;
 import com.ibm.eventstreams.connect.cossink.completion.RecordIntervalCriteria;
 import com.ibm.eventstreams.connect.cossink.deadline.DeadlineService;
+import com.ibm.eventstreams.connect.cossink.deadline.DeadlineServiceImpl;
+import com.ibm.eventstreams.connect.cossink.partitionwriter.COSPartitionWriterFactory;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriter;
 import com.ibm.eventstreams.connect.cossink.partitionwriter.PartitionWriterFactory;
 
@@ -51,6 +56,11 @@ public class COSSinkTask extends SinkTask {
 
     private Bucket bucket;
     private final CompletionCriteriaSet completionCriteria = new CompletionCriteriaSet();
+
+    // Connect framework requires no-value constructor.
+    public COSSinkTask() throws IOException {
+        this(new ClientFactoryImpl(), new COSPartitionWriterFactory(), new HashMap<>(), new DeadlineServiceImpl());
+    }
 
     // For unit test, allows for dependency injection.
     COSSinkTask(
@@ -80,27 +90,27 @@ public class COSSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> props) {
         COSSinkConnectorConfig connectorConfig = new COSSinkConnectorConfig(props);
-        final String apiKey = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
+        final Password apiKey = connectorConfig.getPassword(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
         final String bucketLocation = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
         final String bucketName = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
         final String bucketResiliency = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY);
         final String endpointType = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_ENDPOINT_VISIBILITY);
         final String serviceCRN = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
 
-        final Client client = clientFactory.newClient(apiKey, serviceCRN, bucketLocation, bucketResiliency, endpointType);
+        final Client client = clientFactory.newClient(apiKey.value(), serviceCRN, bucketLocation, bucketResiliency, endpointType);
         bucket = client.bucket(bucketName);
 
-        int recordsPerObject = connectorConfig.getInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS));
+        int recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS);
         if (recordsPerObject > 0) {
             completionCriteria.add(new RecordCountCriteria(recordsPerObject));
         }
 
-        int deadlineSec = connectorConfig.getInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS));
+        int deadlineSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS);
         if (deadlineSec > 0) {
             completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
         }
 
-        int intervalSec = connectorConfig.getInt(props.get(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS));
+        int intervalSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS);
         if (intervalSec > 0) {
             completionCriteria.add(new RecordIntervalCriteria(intervalSec));
         }
