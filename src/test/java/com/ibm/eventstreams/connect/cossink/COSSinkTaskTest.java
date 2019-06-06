@@ -354,6 +354,11 @@ public class COSSinkTaskTest {
         props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "-1");
         props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
         props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY, "APIKEY");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN, "service:instance:crn");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION, "eu-gb");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME, "bucket");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY, "regional");
         task.start(props);
     }
 
