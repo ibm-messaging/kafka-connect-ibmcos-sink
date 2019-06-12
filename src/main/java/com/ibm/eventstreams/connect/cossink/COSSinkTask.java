@@ -55,7 +55,9 @@ public class COSSinkTask extends SinkTask {
     private final DeadlineService deadlineService;
 
     private Bucket bucket;
-    private final CompletionCriteriaSet completionCriteria = new CompletionCriteriaSet();
+    private int recordsPerObject;
+    private int deadlineSec;
+    private int intervalSec;
 
     // Connect framework requires no-value constructor.
     public COSSinkTask() throws IOException {
@@ -100,22 +102,11 @@ public class COSSinkTask extends SinkTask {
         final Client client = clientFactory.newClient(apiKey.value(), serviceCRN, bucketLocation, bucketResiliency, endpointType);
         bucket = client.bucket(bucketName);
 
-        int recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS);
-        if (recordsPerObject > 0) {
-            completionCriteria.add(new RecordCountCriteria(recordsPerObject));
-        }
+        recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS);
+        deadlineSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS);
+        intervalSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS);
 
-        int deadlineSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS);
-        if (deadlineSec > 0) {
-            completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
-        }
-
-        int intervalSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS);
-        if (intervalSec > 0) {
-            completionCriteria.add(new RecordIntervalCriteria(intervalSec));
-        }
-
-        if (completionCriteria.isEmpty()) {
+        if (recordsPerObject < 1 && deadlineSec < 1 && intervalSec < 1) {
             throw new ConfigException(
                     "At least one of: '" + COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS + "', " +
                             COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS + "', or '" +
@@ -125,6 +116,20 @@ public class COSSinkTask extends SinkTask {
 
         open(context.assignment());
         LOG.info("Starting");
+    }
+
+    private CompletionCriteriaSet buildCompletionCriteriaSet() {
+        final CompletionCriteriaSet completionCriteria = new CompletionCriteriaSet();
+        if (recordsPerObject > 0) {
+            completionCriteria.add(new RecordCountCriteria(recordsPerObject));
+        }
+        if (deadlineSec > 0) {
+            completionCriteria.add(new DeadlineCriteria(deadlineService, deadlineSec));
+        }
+        if (intervalSec > 0) {
+            completionCriteria.add(new RecordIntervalCriteria(intervalSec));
+        }
+        return completionCriteria;
     }
 
     /**
@@ -137,8 +142,10 @@ public class COSSinkTask extends SinkTask {
     @Override
     public void open(Collection<TopicPartition> partitions) {
         for (TopicPartition tp : partitions) {
-            if (!assignedWriters.containsKey(tp)) {
-                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, completionCriteria);
+            if (assignedWriters.containsKey(tp)) {
+                LOG.info("A PartitionWriter already exists for {}", tp);
+            } else {
+                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, buildCompletionCriteriaSet());
                 assignedWriters.put(tp, pw);
             }
         }
@@ -156,7 +163,9 @@ public class COSSinkTask extends SinkTask {
     public void close(Collection<TopicPartition> partitions) {
         for (TopicPartition tp : partitions) {
             final PartitionWriter pw = assignedWriters.remove(tp);
-            if (pw != null) {
+            if (pw == null) {
+                LOG.info("No PartitionWriter exist for {}", tp);
+            } else {
                 pw.close();
             }
         }
