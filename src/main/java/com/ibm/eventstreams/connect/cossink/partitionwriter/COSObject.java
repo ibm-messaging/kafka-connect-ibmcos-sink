@@ -77,7 +77,7 @@ class COSObject {
     }
 
     private static String createKey(final SinkRecord record) {
-        return String.format("%4d-%d", record.kafkaPartition(), record.kafkaOffset());
+        return String.format("%s-%d-%d", record.topic(), record.kafkaPartition(), record.kafkaOffset());
     }
 
     private static byte[] createValue(final SinkRecord record) {
