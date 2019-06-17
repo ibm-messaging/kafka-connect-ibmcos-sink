@@ -22,4 +22,8 @@ class ClientFactoryException extends RuntimeException {
     public ClientFactoryException(String msg) {
         super(msg);
     }
+
+    public ClientFactoryException(Exception e) {
+        super(e);
+    }
 }
