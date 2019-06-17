@@ -34,19 +34,21 @@ public class ClientFactoryImpl implements ClientFactory {
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
 
     private static Endpoints endpoints;
-    private static Exception initFailedException;
 
     public ClientFactoryImpl() throws ClientFactoryException {
+        this("https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints");
+    }
+
+    // injectable url for testing
+    ClientFactoryImpl(String cosUrl) throws ClientFactoryException {
         synchronized (initialized) {
             if (!initialized.get()) {
                 try {
-                    endpoints = Endpoints.fetch("https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints");
+                    endpoints = Endpoints.fetch(cosUrl);
                     SDKGlobalConfiguration.IAM_ENDPOINT = "https://" + endpoints.iamToken() + "/oidc/token";
                     initialized.set(true);
-                    initFailedException = null;
                 } catch(Exception e) {
-                    initFailedException = e;
-                    throw new ClientFactoryException(initFailedException);
+                    throw new ClientFactoryException(e);
                 }
             }
         }
@@ -54,10 +56,6 @@ public class ClientFactoryImpl implements ClientFactory {
 
     @Override
     public Client newClient(String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType) {
-        if (initFailedException != null) {
-            throw new ClientFactoryException(initFailedException);
-        }
-
         Map<String, Endpoint> resiliencyEndpoints = null;
         switch(bucketResiliency) {
         case "cross-region":
