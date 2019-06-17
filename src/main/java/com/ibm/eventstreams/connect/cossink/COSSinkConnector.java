@@ -25,7 +25,7 @@ import org.apache.kafka.connect.sink.SinkConnector;
 
 public class COSSinkConnector extends SinkConnector {
 
-    static final String VERSION = "0.1";
+    static final String VERSION = "1.0.0";
 
     private Map<String, String> config;
 

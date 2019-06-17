@@ -37,3 +37,7 @@ eclipse.project {
   natures 'org.springsource.ide.eclipse.gradle.core.nature'
 }
 
+shadowJar {
+   classifier = 'all'
+   version = '1.0.0'
+}
