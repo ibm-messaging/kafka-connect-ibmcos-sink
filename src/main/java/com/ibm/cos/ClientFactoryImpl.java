@@ -37,13 +37,17 @@ public class ClientFactoryImpl implements ClientFactory {
     private static Exception initFailedException;
 
     public ClientFactoryImpl() throws ClientFactoryException {
-        if (initialized.compareAndSet(false, true)) {
-            try {
-                endpoints = Endpoints.fetch("https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints");
-                SDKGlobalConfiguration.IAM_ENDPOINT = "https://" + endpoints.iamToken() + "/oidc/token";
-            } catch(Exception e) {
-                initFailedException = e;
-                throw new ClientFactoryException(e);
+        synchronized (initialized) {
+            if (!initialized.get()) {
+                try {
+                    endpoints = Endpoints.fetch("https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints");
+                    SDKGlobalConfiguration.IAM_ENDPOINT = "https://" + endpoints.iamToken() + "/oidc/token";
+                    initialized.set(true);
+                    initFailedException = null;
+                } catch(Exception e) {
+                    initFailedException = e;
+                    throw new ClientFactoryException(initFailedException);
+                }
             }
         }
     }
@@ -51,7 +55,7 @@ public class ClientFactoryImpl implements ClientFactory {
     @Override
     public Client newClient(String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType) {
         if (initFailedException != null) {
-            throw new ClientFactoryException("COS client failed to initialize due to: " + initFailedException.getMessage());
+            throw new ClientFactoryException(initFailedException);
         }
 
         Map<String, Endpoint> resiliencyEndpoints = null;
