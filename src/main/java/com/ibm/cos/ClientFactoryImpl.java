@@ -15,7 +15,6 @@
  */
 package com.ibm.cos;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -35,23 +34,22 @@ public class ClientFactoryImpl implements ClientFactory {
     private static final AtomicBoolean initialized = new AtomicBoolean(false);
 
     private static Endpoints endpoints;
-    private static IOException initFailedException;
+    private static Exception initFailedException;
 
-    public ClientFactoryImpl() throws IOException {
+    public ClientFactoryImpl() throws ClientFactoryException {
         if (initialized.compareAndSet(false, true)) {
             try {
                 endpoints = Endpoints.fetch("https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints");
                 SDKGlobalConfiguration.IAM_ENDPOINT = "https://" + endpoints.iamToken() + "/oidc/token";
-            } catch(IOException e) {
+            } catch(Exception e) {
                 initFailedException = e;
-                throw e;
+                throw new ClientFactoryException(e);
             }
         }
     }
 
     @Override
-    public Client newClient(String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType)
-    {
+    public Client newClient(String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType) {
         if (initFailedException != null) {
             throw new ClientFactoryException("COS client failed to initialize due to: " + initFailedException.getMessage());
         }

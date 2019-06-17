@@ -15,7 +15,6 @@
  */
 package com.ibm.eventstreams.connect.cossink;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +59,7 @@ public class COSSinkTask extends SinkTask {
     private int intervalSec;
 
     // Connect framework requires no-value constructor.
-    public COSSinkTask() throws IOException {
+    public COSSinkTask() {
         this(new ClientFactoryImpl(), new COSPartitionWriterFactory(), new HashMap<>(), new DeadlineServiceImpl());
     }
 
