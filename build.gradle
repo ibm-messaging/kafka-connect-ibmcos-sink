@@ -24,9 +24,9 @@ repositories {
 }
 
 dependencies {
-  compile 'com.eclipsesource.minimal-json:minimal-json:0.9.1'
-  compile 'com.ibm.cos:ibm-cos-java-sdk:2.4.1'
-  compile 'org.apache.kafka:connect-api:2.0.1'
+  compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
+  compile 'com.ibm.cos:ibm-cos-java-sdk:2.4.5'
+  compile 'org.apache.kafka:connect-api:2.2.1'
 
   testCompile 'org.mockito:mockito-all:1.10.19'
   testCompile 'junit:junit:4.12'
