@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 
 public class Endpoints {
@@ -77,7 +78,7 @@ public class Endpoints {
             throw new IOException("Unable to retrieve endpoint information from: " + endpointsURL);
         }
 
-        final JsonObject root = JsonObject.readFrom(new InputStreamReader(connection.getInputStream()));
+        final JsonObject root = Json.parse(new InputStreamReader(connection.getInputStream())).asObject();
 
         final JsonObject identityEndpoints = root.get("identity-endpoints").asObject();
         final String iamToken = identityEndpoints.get("iam-token").asString();
