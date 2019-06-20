@@ -67,7 +67,7 @@ class COSObject {
             }
         }
 
-        final String key = createKey(records.get(0));
+        final String key = createKey();
         final byte[] value = baos.toByteArray();
         final ByteArrayInputStream bais = new ByteArrayInputStream(value);
         bucket.putObject(key, bais, createMetadata(key, value));
@@ -77,8 +77,10 @@ class COSObject {
         return lastOffset;
     }
 
-    private static String createKey(final SinkRecord record) {
-        return String.format("%s-%d-%d", record.topic(), record.kafkaPartition(), record.kafkaOffset());
+    String createKey() {
+        SinkRecord firstRecord = records.get(0);
+        return String.format("%s/%d/%016d-%016d",
+                firstRecord.topic(), firstRecord.kafkaPartition(), firstRecord.kafkaOffset(), lastOffset);
     }
 
     private static byte[] createValue(final SinkRecord record) {
