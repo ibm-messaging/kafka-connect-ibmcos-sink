@@ -362,11 +362,11 @@ public class COSSinkTaskTest {
         task.start(props);
     }
 
-    // Closing the SinkTask should also close the instance of the DeadlineService
+    // Stopping the SinkTask should also close the instance of the DeadlineService
     // that the task uses.
     @Test
-    public void closeClosesDeadlineService() {
-        task.close(new HashSet<TopicPartition>());
+    public void stopClosesDeadlineService() {
+        task.stop();
         Mockito.verify(mockDeadlineService).close();
     }
 

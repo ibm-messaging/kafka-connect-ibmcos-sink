@@ -56,7 +56,7 @@ public class ClientFactoryImplTest {
         } catch (ClientFactoryException cfe) {
             //expected
         }
-        
+
         ClientFactoryImpl clientfactory = new ClientFactoryImpl(url);
         clientfactory.newClient("apiKey", "serviceCRN", "eu", "cross-region", "public");
         clientfactory.newClient("apiKey", "serviceCRN", "eu", "cross-region", "private");

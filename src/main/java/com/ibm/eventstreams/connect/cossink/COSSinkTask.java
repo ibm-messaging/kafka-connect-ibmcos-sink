@@ -90,6 +90,7 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public void start(Map<String, String> props) {
+        LOG.trace("> start, props={}", props);
         COSSinkConnectorConfig connectorConfig = new COSSinkConnectorConfig(props);
         final Password apiKey = connectorConfig.getPassword(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
         final String bucketLocation = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
@@ -114,7 +115,7 @@ public class COSSinkTask extends SinkTask {
         }
 
         open(context.assignment());
-        LOG.info("Starting");
+        LOG.trace("< start");
     }
 
     private CompletionCriteriaSet buildCompletionCriteriaSet() {
@@ -140,6 +141,7 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public void open(Collection<TopicPartition> partitions) {
+        LOG.trace("> open, partitions={}", partitions);
         for (TopicPartition tp : partitions) {
             if (assignedWriters.containsKey(tp)) {
                 LOG.info("A PartitionWriter already exists for {}", tp);
@@ -148,6 +150,7 @@ public class COSSinkTask extends SinkTask {
                 assignedWriters.put(tp, pw);
             }
         }
+        LOG.trace("< open");
     }
 
     /**
@@ -160,6 +163,7 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public void close(Collection<TopicPartition> partitions) {
+        LOG.trace("> close, partitions={}", partitions);
         for (TopicPartition tp : partitions) {
             final PartitionWriter pw = assignedWriters.remove(tp);
             if (pw == null) {
@@ -168,6 +172,7 @@ public class COSSinkTask extends SinkTask {
                 pw.close();
             }
         }
+        LOG.trace("< close");
     }
 
     /**
@@ -178,10 +183,11 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public void stop() {
-        LOG.info("Stopping");
+        LOG.trace("> stop");
         bucket = null;
         deadlineService.close();
         assignedWriters.clear();
+        LOG.trace("< stop");
     }
 
     /**
@@ -197,6 +203,7 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public void put(Collection<SinkRecord> records) {
+        LOG.trace("> put, records.size={}", records.size());
         for (final SinkRecord record : records) {
             final TopicPartition tp = new TopicPartition(record.topic(), record.kafkaPartition());
             final PartitionWriter pw = assignedWriters.get(tp);
@@ -206,6 +213,7 @@ public class COSSinkTask extends SinkTask {
                 assignedWriters.get(tp).put(record);
             }
         }
+        LOG.trace("< put");
     }
 
     /**
@@ -221,14 +229,16 @@ public class COSSinkTask extends SinkTask {
      */
     @Override
     public Map<TopicPartition, OffsetAndMetadata> preCommit(Map<TopicPartition, OffsetAndMetadata> offsets) {
-      final Map<TopicPartition, OffsetAndMetadata> result = new HashMap<>();
-      for (Map.Entry<TopicPartition, PartitionWriter> entry : assignedWriters.entrySet()) {
-          final Long offset = entry.getValue().preCommit();
-          if (offset != null) {
-              result.put(entry.getKey(), new OffsetAndMetadata(offset));
-          }
-      }
-      return result;
+        LOG.trace("> preCommit, offsets={}", offsets);
+        final Map<TopicPartition, OffsetAndMetadata> result = new HashMap<>();
+        for (Map.Entry<TopicPartition, PartitionWriter> entry : assignedWriters.entrySet()) {
+            final Long offset = entry.getValue().preCommit();
+            if (offset != null) {
+                result.put(entry.getKey(), new OffsetAndMetadata(offset));
+            }
+        }
+        LOG.trace("< preCommit, retval={}", result);
+        return result;
     }
 
 }

@@ -22,8 +22,12 @@ import java.util.Map;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class COSSinkConnector extends SinkConnector {
+
+    private static final Logger LOG = LoggerFactory.getLogger(COSSinkConnector.class);
 
     static final String VERSION = "1.0.0";
 
@@ -47,7 +51,9 @@ public class COSSinkConnector extends SinkConnector {
      */
     @Override
     public void start(Map<String, String> props) {
+        LOG.trace("> start, props={}", props);
         this.config = props;
+        LOG.trace("< start");
     }
 
     /**
@@ -67,10 +73,12 @@ public class COSSinkConnector extends SinkConnector {
      */
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
+        LOG.trace("> taskConfigs, maxTasks={}", maxTasks);
         List<Map<String, String>> taskConfigs = new ArrayList<>();
         for (int i = 0; i < maxTasks; i++) {
             taskConfigs.add(config);
         }
+        LOG.trace("< taskConfigs, retval={}", taskConfigs);
         return taskConfigs;
     }
 
@@ -79,8 +87,9 @@ public class COSSinkConnector extends SinkConnector {
      */
     @Override
     public void stop() {
+        LOG.trace("> stop");
+        LOG.trace("< stop");
     }
-
 
     /**
      * Define the configuration for the connector.

@@ -18,6 +18,8 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ibm.cos.Bucket;
 import com.ibm.eventstreams.connect.cossink.completion.AsyncCompleter;
@@ -25,6 +27,8 @@ import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
 import com.ibm.eventstreams.connect.cossink.completion.FirstResult;
 
 class COSPartitionWriter extends RequestProcessor<RequestType> implements PartitionWriter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(COSPartitionWriter.class);
 
     private final Bucket bucket;
     private final CompletionCriteriaSet completionCriteria;
@@ -42,23 +46,30 @@ class COSPartitionWriter extends RequestProcessor<RequestType> implements Partit
 
     @Override
     public Long preCommit() {
+        LOG.trace("> preCommit");
         Long offset = lastOffset.getAndSet(null);
         if (offset == null) {
             return null;
         }
         // Commit the offset one beyond the last record processed. This is
         // where processing should resume from if the task fails.
-        return offset + 1;
+        Long retval = offset + 1;
+        LOG.trace("< preCommit, retval={}", retval);
+        return retval;
     }
 
     @Override
     public void put(final SinkRecord record) {
+        LOG.trace("> put, {}-{} offset={}", record.topic(), record.kafkaPartition(), record.kafkaOffset());
         queue(RequestType.PUT, record);
+        LOG.trace("< put");
     }
 
     @Override
     public void close() {
+        LOG.trace("> close");
         super.close();
+        LOG.trace("< close");
     }
 
     private void writeObject() {

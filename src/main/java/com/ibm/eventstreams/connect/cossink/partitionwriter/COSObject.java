@@ -20,19 +20,23 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ibm.cloud.objectstorage.services.s3.model.ObjectMetadata;
 import com.ibm.cos.Bucket;
 
 class COSObject {
+    private static final Logger LOG = LoggerFactory.getLogger(COSObject.class);
 
-    private static final Charset UTF8 = Charset.forName("UTF8");
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
     private static final byte[] EMPTY = new byte[0];
 
     private final List<SinkRecord> records = new LinkedList<>();
@@ -41,15 +45,16 @@ class COSObject {
     COSObject() {
     }
 
-
     void put(SinkRecord record) {
+        LOG.trace("> put, {}-{} offset={}", record.topic(), record.kafkaPartition(), record.kafkaOffset());
         records.add(record);
         lastOffset = record.kafkaOffset();
+        LOG.trace("< put");
     }
 
-
     void write(final Bucket bucket) {
-        if (records.size() == 0) {
+        LOG.trace("> write, records.size={} lastOffset={}", records.size(), lastOffset);
+        if (records.isEmpty()) {
             throw new IllegalStateException("Attempting to write an empty object");
         }
 
@@ -67,6 +72,7 @@ class COSObject {
         final byte[] value = baos.toByteArray();
         final ByteArrayInputStream bais = new ByteArrayInputStream(value);
         bucket.putObject(key, bais, createMetadata(key, value));
+        LOG.trace("< write, key={}", key);
     }
 
     Long lastOffset() {

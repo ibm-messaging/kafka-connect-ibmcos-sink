@@ -24,8 +24,7 @@ public class COSPartitionWriterFactory implements PartitionWriterFactory {
     }
 
     @Override
-    public PartitionWriter newPartitionWriter(
-            final Bucket bucket, final CompletionCriteriaSet completionCriteria) {
+    public PartitionWriter newPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria) {
         return new COSPartitionWriter(bucket, completionCriteria);
     }
 

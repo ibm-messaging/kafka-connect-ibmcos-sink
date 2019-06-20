@@ -44,7 +44,7 @@ public class DeadlineCriteria implements ObjectCompletionCriteria, DeadlineListe
 
     @Override
     public FirstResult first(SinkRecord sinkRecord, AsyncCompleter asyncCompleter) {
-        canceller = deadlineService.schedule(this,  deadlineSec,  TimeUnit.SECONDS, asyncCompleter);
+        canceller = deadlineService.schedule(this, deadlineSec, TimeUnit.SECONDS, asyncCompleter);
         return FirstResult.INCOMPLETE;
     }
 
