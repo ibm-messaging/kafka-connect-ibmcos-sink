@@ -168,8 +168,6 @@ public class COSSinkTask extends SinkTask {
                 pw.close();
             }
         }
-
-        deadlineService.close();
     }
 
     /**
@@ -182,6 +180,7 @@ public class COSSinkTask extends SinkTask {
     public void stop() {
         LOG.info("Stopping");
         bucket = null;
+        deadlineService.close();
         assignedWriters.clear();
     }
 
