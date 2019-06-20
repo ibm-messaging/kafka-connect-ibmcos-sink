@@ -53,10 +53,6 @@ class COSObject {
             throw new IllegalStateException("Attempting to write an empty object");
         }
 
-        // TODO: how should records with a zero length value be handled?
-
-        // TODO: this is in-efficient. It would probably be better to convert the SyncRecords into
-        //       []byte each time one is received, and implement a gathering input stream.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (SinkRecord record : records) {
             try {
