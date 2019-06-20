@@ -33,6 +33,7 @@ import com.ibm.cos.Bucket;
 class COSObject {
 
     private static final Charset UTF8 = Charset.forName("UTF8");
+    private static final byte[] EMPTY = new byte[0];
 
     private final List<SinkRecord> records = new LinkedList<>();
     private Long lastOffset;
@@ -94,7 +95,12 @@ class COSObject {
         }
 
         if (result == null) {
-            result = record.value().toString().getBytes(UTF8);
+            Object value = record.value();
+            if (value != null) {
+                result = value.toString().getBytes(UTF8);
+            } else {
+                result = EMPTY;
+            }
         }
         return result;
     }
