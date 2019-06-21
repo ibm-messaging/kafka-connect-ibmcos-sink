@@ -96,9 +96,9 @@ is usually not an efficient way to use Cloud Object Storage. This connector offe
 three different controls for deciding how much Kafka data gets combined into a
 object:
 
-- `os.object.records`
-- `os.object.interval.seconds`
-- `os.object.deadline.seconds`
+- `cos.object.records`
+- `cos.object.interval.seconds`
+- `cos.object.deadline.seconds`
 
 At least one of these configuration properties must be specified. If more than
 one property is specified then an object is written at the point the first of
@@ -158,9 +158,10 @@ bin/connect-standalone.sh connect-standalone.properties cos-sink.properties
 
 ### Distributed Mode
 
-You need an instance of Kafka Connect running in distributed mode. To start the connector, you can use `config/cos-sink.json` in this repository after replacing all placeholders.
+You need an instance of Kafka Connect running in distributed mode. The Kafka distribution includes a file called connect-distributed.properties that you can use as a starting point.
 
-To run the connector in distributed mode, you use a command like this:
+To start the COS connector, you can use `config/cos-sink.json` in this repository after replacing all placeholders, 
+and use a command like this:
 
 ```shell
 curl -X POST -H "Content-Type: application/json" http://localhost:8083/connectors \

@@ -7,15 +7,15 @@
         "key.converter": "org.apache.kafka.connect.storage.StringConverter",
         "value.converter": "org.apache.kafka.connect.storage.StringConverter",
 
-        "os.api.key": "<COS_APIKEY>",
-        "os.bucket.location": "eu-gb",
-        "os.bucket.name": "<BUCKET_NAME>",
-        "os.bucket.resiliency": "regional",
-        "os.endpoint.visibility": "public",
+        "cos.api.key": "<COS_APIKEY>",
+        "cos.bucket.location": "<COS_LOCATION>",
+        "cos.bucket.name": "<BUCKET_NAME>",
+        "cos.bucket.resiliency": "regional",
+        "cos.endpoint.visibility": "public",
 
-        "os.object.deadline.seconds": "5",
-        "os.object.interval.seconds": "5",
-        "os.object.records": "5",
-        "os.service.crn": "<COS_CRN>"
+        "cos.object.deadline.seconds": "5",
+        "cos.object.interval.seconds": "5",
+        "cos.object.records": "5",
+        "cos.service.crn": "<COS_CRN>"
     }
 }
