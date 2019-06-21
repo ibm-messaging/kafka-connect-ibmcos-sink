@@ -92,25 +92,25 @@ public class COSSinkTask extends SinkTask {
     public void start(Map<String, String> props) {
         LOG.trace("> start, props={}", props);
         COSSinkConnectorConfig connectorConfig = new COSSinkConnectorConfig(props);
-        final Password apiKey = connectorConfig.getPassword(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY);
-        final String bucketLocation = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION);
-        final String bucketName = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME);
-        final String bucketResiliency = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY);
-        final String endpointType = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_ENDPOINT_VISIBILITY);
-        final String serviceCRN = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN);
+        final Password apiKey = connectorConfig.getPassword(COSSinkConnectorConfig.CONFIG_NAME_COS_API_KEY);
+        final String bucketLocation = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_LOCATION);
+        final String bucketName = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_NAME);
+        final String bucketResiliency = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_RESILIENCY);
+        final String endpointType = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_ENDPOINT_VISIBILITY);
+        final String serviceCRN = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_SERVICE_CRN);
 
         final Client client = clientFactory.newClient(apiKey.value(), serviceCRN, bucketLocation, bucketResiliency, endpointType);
         bucket = client.bucket(bucketName);
 
-        recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS);
-        deadlineSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS);
-        intervalSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS);
+        recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS);
+        deadlineSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS);
+        intervalSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS);
 
         if (recordsPerObject < 1 && deadlineSec < 1 && intervalSec < 1) {
             throw new ConfigException(
-                    "At least one of: '" + COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS + "', " +
-                            COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS + "', or '" +
-                            COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS + "' must be set " +
+                    "At least one of: '" + COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS + "', " +
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS + "', or '" +
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS + "' must be set " +
                             "to a value that is greater than zero");
         }
 
