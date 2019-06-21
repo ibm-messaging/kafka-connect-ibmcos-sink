@@ -9,15 +9,41 @@ Using this connector, you can:
     efficient retrieval from object storage.
   - Preserve ordering of Kafka data. Kafka ordering of records within a
     partition is maintained as the data is written into object storage.
-  - Transfer data _exactly-once_ (subject to some restrictions, see below).
+  - Transfer data exactly once (subject to some restrictions, see [Exactly once delivery](#exactly-once-delivery)).
 
+## Content
+- [Building the connector](#building-the-connector)
+- [Configuration](#configuration)
+- [Combining multiple Kafka records into an object](#combining-multiple-kafka-records-into-an-object)
+- [Exactly once delivery](#exactly-once-delivery)
+- [Provisioning an IBM Cloud Object Storage Service instance](#provisioning-an-ibm-cloud-object-storage-service-instance)
+- [Running the connector](#running-the-connector)
 
-## Building
+## Building the connector
+
+To build the connector, you must have the following installed:
+
+* [git](https://git-scm.com/)
+* [Gradle 4.0 or later](https://gradle.org/)
+* Java 8 or later
+
+Clone the repository with the following command:
+
+```shell
+git clone https://github.com/ibm-messaging/kafka-connect-ibmcos-sink
+```
+
+Change directory into the `kafka-connect-ibmcos-sink` directory:
+
+```shell
+cd kafka-connect-ibmcos-sink
+```
+
+Build the connector using Gradle:
 
 ```shell
 $ gradle shadowJar
 ```
-
 
 ## Configuration
 
@@ -89,8 +115,6 @@ records have been received, whichever condition occurs first.
 
 ## Exactly once delivery
 
-:construction: not implemented yet :construction:
-
 This connector can be used to provide exactly once delivery of Kafka records
 into object storage. When used like this, data is copied without loss or
 duplication.
@@ -108,5 +132,38 @@ the grouping of Kafka records into objects is dependent on the speed at which
 the system hosting the connector can process records.
 
 
+## Provisioning an IBM Cloud Object Storage Service instance
 
+To use this connector you must provision an instance of the [IBM Cloud Object Storage Service](https://cloud.ibm.com/catalog/services/cloud-object-storage). Once provisioned, navigate to the `Service Credentials` tab in your instance to retrieve the required configurations for the connector. You also need to create a Bucket.
+
+## Running the connector
+
+To run the connector, you must have:
+
+* The JAR from building the connector
+* A properties file containing the configuration for the connector
+* Apache Kafka 1.1.0 or later, either standalone or included as part of an offering such as [IBM Event Streams](https://cloud.ibm.com/catalog/services/event-streams)
+
+The connector can be run in a Kafka Connect worker in either standalone (single process) or distributed mode.
+
+### Standalone Mode
+
+You need two configuration files, one for the configuration that applies to all of the connectors such as the Kafka bootstrap servers, and another for the configuration specific to the IBM Cloud Object Storage sink connector such as the connection information for your Cloud Object Storage service. For the former, the Kafka distribution includes a file called connect-standalone.properties that you can use as a starting point. For the latter, you can use `config/cos-sink.properties` in this repository after replacing all placeholders.
+
+To run the connector in standalone mode from the directory into which you installed Apache Kafka, you use a command like this:
+
+```shell
+bin/connect-standalone.sh connect-standalone.properties cos-sink.properties
+```
+
+### Distributed Mode
+
+You need an instance of Kafka Connect running in distributed mode. To start the connector, you can use `config/cos-sink.json` in this repository after replacing all placeholders.
+
+To run the connector in distributed mode, you use a command like this:
+
+```shell
+curl -X POST -H "Content-Type: application/json" http://localhost:8083/connectors \
+  --data "@./config/cos-sink.json" 
+```
 
