@@ -4,7 +4,7 @@ Kafka Connect Sink Connector for [IBM Cloud Object
 Storage](https://console.bluemix.net/catalog/services/cloud-object-storage).
 
 Using this connector, you can:
-  - Copy data from a Kafka topic into object storage.
+  - Copy data from a Kafka topic into IBM Cloud Object Storage.
   - Flexibly batch together multiple Kafka records into a single object for
     efficient retrieval from object storage.
   - Preserve ordering of Kafka data. Kafka ordering of records within a
@@ -21,44 +21,44 @@ $ gradle shadowJar
 
 ## Configuration
 
-- `os.api.key` _(required)_ - API key used to connect to the Object Storage
+- `cos.api.key` _(required)_ - API key used to connect to the Cloud Object Storage
           service instance.
 
-- `os.bucket.location`_(required)_ - Location of the Object Storage service
+- `cos.bucket.location`_(required)_ - Location of the Cloud Object Storage service
           bucket, for example: `eu-gb`.
 
-- `os.bucket.name` _(required)_ - Name of the Object Storage service bucket to
+- `cos.bucket.name` _(required)_ - Name of the Cloud Object Storage service bucket to
           write data into.
 
-- `os.bucket.resiliency` _(required)_ - Resiliency of the Object Storage bucket.
+- `cos.bucket.resiliency` _(required)_ - Resiliency of the Cloud Object Storage bucket.
           Must be one of: `cross-region`, `regional`, or `single-site`.
 
-- `os.endpoint.visibility` _(optional)_ - Specify `public` to connect to the
-          Object Storage service over the public internet, or `private` to
+- `cos.endpoint.visibility` _(optional)_ - Specify `public` to connect to the
+          Cloud Object Storage service over the public internet, or `private` to
           connect from a connector running inside the IBM Cloud network, for
           example from an IBM Cloud Kubernetes Service cluster. The default is
           `public`.
 
-- `os.object.deadline.seconds` _(optional)_ - The number of seconds (as measured
+- `cos.object.deadline.seconds` _(optional)_ - The number of seconds (as measured
           wall clock time for the Connect Task instance) between reading the
           first record from Kafka, and writing all of the records read so far
-          into an object storage object. This can be useful in situations where
+          into a Cloud Object Storage object. This can be useful in situations where
           there are long pauses between Kafka records being produced to a topic,
           as it ensures that any records received by this connector will always
           be written into object storage within the specified period of time.
 
-- `os.object.interval.seconds` _(optional)_ - The number of seconds (as measured
+- `cos.object.interval.seconds` _(optional)_ - The number of seconds (as measured
           by the timestamps in Kafka records) between reading the first record
-          from Kafka, and writing all of the records read so far into an object
-          storage object.
+          from Kafka, and writing all of the records read so far into a Cloud Object
+          Storage object.
 
-- `os.object.records` _(optional)_ - The maximum number of Kafka records to
+- `cos.object.records` _(optional)_ - The maximum number of Kafka records to
           combine into a object.
 
-- `os.service.crn`_(required)_ - CRN for the Object Storage service instance.
+- `cos.service.crn`_(required)_ - CRN for the Cloud Object Storage service instance.
 
-Note that while the configuration properties `os.object.deadline.seconds`,
-`os.interval.seconds`, and `os.object.records` are all listed as optional,
+Note that while the configuration properties `cos.object.deadline.seconds`,
+`cos.interval.seconds`, and `cos.object.records` are all listed as optional,
 *at least one* of these properties *must* be set to a non-default value.
 
 
@@ -66,7 +66,7 @@ Note that while the configuration properties `os.object.deadline.seconds`,
 
 Typically Kafka records are much smaller than the maximum size an object storage
 object. And while it is possible to create an object for each Kafka record this
-is usually not an efficient way to use object storage. This connector offers
+is usually not an efficient way to use Cloud Object Storage. This connector offers
 three different controls for deciding how much Kafka data gets combined into a
 object:
 
@@ -80,8 +80,8 @@ these limits is reached.
 
 For example, given the following configuration:
 ```
-os.object.records=100
-os.object.deadline.seconds=60
+cos.object.records=100
+cos.object.deadline.seconds=60
 ```
 Assuming that at least one Kafka record is available to be written into an
 object then objects will be created either: every minute, or after 100 Kafka
@@ -98,12 +98,12 @@ duplication.
 Exactly once delivery requires that Kafka records are combined into objects in a
 completely deterministic way. Which is to say that given a stream of Kafka
 records to process, the connector will always group the same records into each
-object storage object.
+Cloud Object Storage object.
 
-Using either the `os.object.records` property or the
-`os.object.interval.seconds` property (or both together) will result in
+Using either the `cos.object.records` property or the
+`cos.object.interval.seconds` property (or both together) will result in
 deterministic processing of Kafka records into objects. However the
-`os.object.deadline.seconds` option cannot be used for exactly once delivery as
+`cos.object.deadline.seconds` option cannot be used for exactly once delivery as
 the grouping of Kafka records into objects is dependent on the speed at which
 the system hosting the connector can process records.
 

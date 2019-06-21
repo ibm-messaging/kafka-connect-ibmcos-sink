@@ -110,14 +110,14 @@ public class COSSinkTaskTest {
         task.initialize(Mockito.mock(SinkTaskContext.class));
 
         Map<String, String> config = new HashMap<>();
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY, "APIKEY");
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN, "service:instance:crn");
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION, "eu-gb");
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME, "bucket");
-        config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY, "regional");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS, "1");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS, "-1");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS, "-1");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_API_KEY, "APIKEY");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_SERVICE_CRN, "service:instance:crn");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_LOCATION, "eu-gb");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_NAME, "bucket");
+        config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_RESILIENCY, "regional");
         task.start(config);
 
         Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -136,14 +136,14 @@ public class COSSinkTaskTest {
             task.initialize(mockContext);
 
             Map<String, String> config = new HashMap<>();
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "1");
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY, "APIKEY");
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN, "service:instance:crn");
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION, "eu-gb");
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME, "bucket");
-            config.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY, "regional");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS, "1");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS, "-1");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS, "-1");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_API_KEY, "APIKEY");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_SERVICE_CRN, "service:instance:crn");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_LOCATION, "eu-gb");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_NAME, "bucket");
+            config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_RESILIENCY, "regional");
             task.start(config);
 
             Collection<TopicPartition> assignedTp = assignedWriters.keySet();
@@ -351,14 +351,14 @@ public class COSSinkTaskTest {
     @Test(expected=ConfigException.class)
     public void startThrowsConfigExceptionIfObjectSizeConfigAllUnset() {
         Map<String, String> props = new HashMap<>();
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_RECORDS, "-1");
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_DEADLINE_SECONDS, "-1");
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_OBJECT_INTERVAL_SECONDS, "-1");
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_API_KEY, "APIKEY");
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_SERVICE_CRN, "service:instance:crn");
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_LOCATION, "eu-gb");
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_NAME, "bucket");
-        props.put(COSSinkConnectorConfig.CONFIG_NAME_OS_BUCKET_RESILIENCY, "regional");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS, "-1");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS, "-1");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS, "-1");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_API_KEY, "APIKEY");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_SERVICE_CRN, "service:instance:crn");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_LOCATION, "eu-gb");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_NAME, "bucket");
+        props.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_RESILIENCY, "regional");
         task.start(props);
     }
 
