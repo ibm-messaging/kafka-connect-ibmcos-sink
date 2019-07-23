@@ -14,6 +14,7 @@ Using this connector, you can:
 ## Content
 - [Building the connector](#building-the-connector)
 - [Configuration](#configuration)
+- [Object Names](#object-names)
 - [Combining multiple Kafka records into an object](#combining-multiple-kafka-records-into-an-object)
 - [Exactly once delivery](#exactly-once-delivery)
 - [Provisioning an IBM Cloud Object Storage Service instance](#provisioning-an-ibm-cloud-object-storage-service-instance)
@@ -86,6 +87,22 @@ $ gradle shadowJar
 Note that while the configuration properties `cos.object.deadline.seconds`,
 `cos.interval.seconds`, and `cos.object.records` are all listed as optional,
 *at least one* of these properties *must* be set to a non-default value.
+
+## Object Names
+
+The connector uses the following scheme to name Cloud Object Storage objects:
+
+```
+topic/partition/firstoffset-lastoffset
+```
+
+Both `firstoffset` and `lastoffset` refer to the Kafka offsets of the records included in this object and are padded to 16 characters using zeros.
+
+For example:
+```
+mytopic/1/0000000000017805-0000000000017809
+```
+means this objects contains 5 Kafka records, offsets 17805 to 17809, from partition 1 of mytopic.
 
 
 ## Combining multiple Kafka records into an object
