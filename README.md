@@ -51,7 +51,7 @@ $ gradle shadowJar
 - `cos.api.key` _(required)_ - API key used to connect to the Cloud Object Storage
           service instance.
 
-- `cos.bucket.location`_(required)_ - Location of the Cloud Object Storage service
+- `cos.bucket.location` _(required)_ - Location of the Cloud Object Storage service
           bucket, for example: `eu-gb`.
 
 - `cos.bucket.name` _(required)_ - Name of the Cloud Object Storage service bucket to
@@ -82,7 +82,10 @@ $ gradle shadowJar
 - `cos.object.records` _(optional)_ - The maximum number of Kafka records to
           combine into a object.
 
-- `cos.service.crn`_(required)_ - CRN for the Cloud Object Storage service instance.
+- `cos.service.crn` _(required)_ - CRN for the Cloud Object Storage service instance.
+
+- `cos.endpoints.url` _(optional)_ - Endpoints URL for the Cloud Object Storage instance.
+          Only set this in environments where a non-default set of endpoints is required.
 
 Note that while the configuration properties `cos.object.deadline.seconds`,
 `cos.interval.seconds`, and `cos.object.records` are all listed as optional,

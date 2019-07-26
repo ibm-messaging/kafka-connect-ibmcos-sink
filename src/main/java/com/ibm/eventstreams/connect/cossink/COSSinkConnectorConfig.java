@@ -80,6 +80,11 @@ public class COSSinkConnectorConfig extends AbstractConfig {
             "object and the last.";
     private static final String CONFIG_DISPLAY_COS_OBJECT_INTERVAL_SECONDS = "Object interval seconds";
 
+    static final String CONFIG_NAME_COS_ENDPOINTS_URL = "cos.endpoints.url";
+    private static final String CONFIG_DOCUMENTATION_COS_ENDPOINTS_URL = "Endpoints URL for the Cloud Object Storage instance. Only set this in environments where a non-default set of endpoints is required.";
+    private static final String CONFIG_DISPLAY_COS_ENDPOINTS_URL = "Endpoints URL";
+    private static final String CONFIG_VALUE_COS_ENDPOINTS_URL = "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints";
+
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(CONFIG_NAME_COS_API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_COS_API_KEY, CONFIG_GROUP_COS, 1, Width.MEDIUM,
@@ -122,7 +127,11 @@ public class COSSinkConnectorConfig extends AbstractConfig {
 
         .define(CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS, Type.INT, -1, Importance.HIGH,
                 CONFIG_DOCUMENTATION_COS_OBJECT_INTERVAL_SECONDS, CONFIG_GROUP_COS, 9, Width.MEDIUM,
-                CONFIG_DISPLAY_COS_OBJECT_INTERVAL_SECONDS);
+                CONFIG_DISPLAY_COS_OBJECT_INTERVAL_SECONDS)
+
+        .define(CONFIG_NAME_COS_ENDPOINTS_URL, Type.STRING, CONFIG_VALUE_COS_ENDPOINTS_URL, Importance.LOW,
+                CONFIG_DOCUMENTATION_COS_ENDPOINTS_URL, CONFIG_GROUP_COS, 10, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_ENDPOINTS_URL);
 
     public COSSinkConnectorConfig(ConfigDef definition, Map<?, ?> originals) {
         super(definition, originals);

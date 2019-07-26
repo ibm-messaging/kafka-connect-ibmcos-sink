@@ -98,8 +98,9 @@ public class COSSinkTask extends SinkTask {
         final String bucketResiliency = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_RESILIENCY);
         final String endpointType = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_ENDPOINT_VISIBILITY);
         final String serviceCRN = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_SERVICE_CRN);
+        final String endpointUrl = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_ENDPOINTS_URL);
 
-        final Client client = clientFactory.newClient(apiKey.value(), serviceCRN, bucketLocation, bucketResiliency, endpointType);
+        final Client client = clientFactory.newClient(endpointUrl, apiKey.value(), serviceCRN, bucketLocation, bucketResiliency, endpointType);
         bucket = client.bucket(bucketName);
 
         recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS);

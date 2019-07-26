@@ -76,7 +76,7 @@ public class COSSinkTaskTest {
 
         Mockito.when(
                 mockClientFactory.newClient(
-                        Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                        Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
         .thenAnswer(new Answer<Client>() {
             @Override
             public Client answer(InvocationOnMock invocation) throws Throwable {
@@ -120,7 +120,7 @@ public class COSSinkTaskTest {
         config.put(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_RESILIENCY, "regional");
         task.start(config);
 
-        Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(mockClientFactory, Mockito.atLeastOnce()).newClient(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
     }
 
     // Calling start() should assign any partitions initially present in the context to the task.
