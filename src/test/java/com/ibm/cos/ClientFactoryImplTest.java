@@ -29,18 +29,17 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
 public class ClientFactoryImplTest {
-    
+
     private MockWebServer server;
     private String url;
+    private String json;
 
     @Before
     public void setUp() throws Exception {
         server = new MockWebServer();
         server.start();
         url = server.url("/").toString();
-        String json = new String(Files.readAllBytes(Paths.get("./src/test/resources/endpoints.json")));
-        server.enqueue(new MockResponse().setResponseCode(500));
-        server.enqueue(new MockResponse().setBody(json));
+        json = new String(Files.readAllBytes(Paths.get("./src/test/resources/endpoints.json")));
     }
 
     @After
@@ -49,33 +48,42 @@ public class ClientFactoryImplTest {
     }
 
     @Test
-    public void testConstructor() throws IOException {
+    public void testNewClient() throws IOException {
+
+        ClientFactoryImpl clientfactory = new ClientFactoryImpl();
+        server.enqueue(new MockResponse().setResponseCode(500));
         try {
-            new ClientFactoryImpl(url);
+            clientfactory.newClient(url, "apiKey", "serviceCRN", "ams03", "single-site", "public");
             fail("Should have thrown ClientFactoryException");
         } catch (ClientFactoryException cfe) {
-            //expected
+            //expected 
         }
 
-        ClientFactoryImpl clientfactory = new ClientFactoryImpl(url);
-        clientfactory.newClient("apiKey", "serviceCRN", "eu", "cross-region", "public");
-        clientfactory.newClient("apiKey", "serviceCRN", "eu", "cross-region", "private");
-        clientfactory.newClient("apiKey", "serviceCRN", "eu-de", "regional", "public");
-        clientfactory.newClient("apiKey", "serviceCRN", "ams03", "single-site", "public");
+        server.enqueue(new MockResponse().setBody(json));
+        clientfactory.newClient(url, "apiKey", "serviceCRN", "eu", "cross-region", "public");
+        server.enqueue(new MockResponse().setBody(json));
+        clientfactory.newClient(url, "apiKey", "serviceCRN", "eu", "cross-region", "private");
+        server.enqueue(new MockResponse().setBody(json));
+        clientfactory.newClient(url, "apiKey", "serviceCRN", "eu-de", "regional", "public");
+        server.enqueue(new MockResponse().setBody(json));
+        clientfactory.newClient(url, "apiKey", "serviceCRN", "ams03", "single-site", "public");
+        server.enqueue(new MockResponse().setBody(json));
         try {
-            clientfactory.newClient("apiKey", "serviceCRN", "eu", "something", "public");
+            clientfactory.newClient(url, "apiKey", "serviceCRN", "eu", "something", "public");
             fail("Should have thrown ClientFactoryException");
         } catch (ClientFactoryException cfe) {
             //expected
         }
+        server.enqueue(new MockResponse().setBody(json));
         try {
-            clientfactory.newClient("apiKey", "serviceCRN", "ams03", "single-site", "blah");
+            clientfactory.newClient(url, "apiKey", "serviceCRN", "ams03", "single-site", "blah");
             fail("Should have thrown ClientFactoryException");
         } catch (ClientFactoryException cfe) {
             //expected
         }
+        server.enqueue(new MockResponse().setBody(json));
         try {
-            clientfactory.newClient("apiKey", "serviceCRN", "blah", "single-site", "public");
+            clientfactory.newClient(url, "apiKey", "serviceCRN", "blah", "single-site", "public");
             fail("Should have thrown ClientFactoryException");
         } catch (ClientFactoryException cfe) {
             //expected

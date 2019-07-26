@@ -16,7 +16,6 @@
 package com.ibm.cos;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.ibm.cloud.objectstorage.ClientConfiguration;
 import com.ibm.cloud.objectstorage.SDKGlobalConfiguration;
@@ -31,31 +30,17 @@ import com.ibm.cos.endpoints.Endpoints;
 
 public class ClientFactoryImpl implements ClientFactory {
 
-    private static final AtomicBoolean initialized = new AtomicBoolean(false);
-
     private static Endpoints endpoints;
 
-    public ClientFactoryImpl() throws ClientFactoryException {
-        this("https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints");
-    }
-
-    // injectable url for testing
-    ClientFactoryImpl(String cosUrl) throws ClientFactoryException {
-        synchronized (initialized) {
-            if (!initialized.get()) {
-                try {
-                    endpoints = Endpoints.fetch(cosUrl);
-                    SDKGlobalConfiguration.IAM_ENDPOINT = "https://" + endpoints.iamToken() + "/oidc/token";
-                    initialized.set(true);
-                } catch(Exception e) {
-                    throw new ClientFactoryException(e);
-                }
-            }
-        }
-    }
-
     @Override
-    public Client newClient(String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType) {
+    public Client newClient(String cosUrl, String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType)
+    throws ClientFactoryException {
+        try {
+            endpoints = Endpoints.fetch(cosUrl);
+            SDKGlobalConfiguration.IAM_ENDPOINT = "https://" + endpoints.iamToken() + "/oidc/token";
+        } catch (Exception exc) {
+            throw new ClientFactoryException(exc);
+        }
         Map<String, Endpoint> resiliencyEndpoints = null;
         switch(bucketResiliency) {
         case "cross-region":
