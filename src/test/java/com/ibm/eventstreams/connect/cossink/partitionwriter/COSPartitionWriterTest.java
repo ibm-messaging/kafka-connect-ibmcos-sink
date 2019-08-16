@@ -58,7 +58,7 @@ public class COSPartitionWriterTest {
         MockitoAnnotations.initMocks(this);
         mockBucket = new MockBucket();
         criteriaSet = new CompletionCriteriaSet();
-        writer = new COSPartitionWriter(mockBucket, criteriaSet);
+        writer = new COSPartitionWriter(mockBucket, criteriaSet, null);
     }
 
     private SinkRecord sinkRecord(

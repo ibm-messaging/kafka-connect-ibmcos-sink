@@ -64,9 +64,15 @@ public class COSSinkConnectorConfig extends AbstractConfig {
     static final String CONFIG_VALUE_COS_ENDPOINT_VISIBILITY_PRIVATE = "private";
 
     static final String CONFIG_NAME_COS_OBJECT_RECORDS = "cos.object.records";
+
     private static final String CONFIG_DOCUMENTATION_COS_OBJECT_RECORDS =
             "The maximum number of Kafka records to group together into a single object storage object.";
     private static final String CONFIG_DISPLAY_COS_OBJECT_RECORDS = "Records per object";
+
+    static final String CONFIG_NAME_COS_OBJECT_RECORD_DELIMITER = "cos.object.record.delimiter";
+    private static final String CONFIG_DOCUMENTATION_COS_OBJECT_RECORD_DELIMITER =
+            "The delimited to separate records within a single object storage object.";
+    private static final String CONFIG_DISPLAY_COS_OBJECT_RECORD_DELIMITER = "Delimiter per Record";
 
     static final String CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS = "cos.object.deadline.seconds";
     private static final String CONFIG_DOCUMENTATION_COS_OBJECT_DEADLINE_SECONDS =
@@ -121,16 +127,20 @@ public class COSSinkConnectorConfig extends AbstractConfig {
                 CONFIG_DOCUMENTATION_COS_OBJECT_RECORDS, CONFIG_GROUP_COS, 7, Width.MEDIUM,
                 CONFIG_DISPLAY_COS_OBJECT_RECORDS)
 
+        .define(CONFIG_NAME_COS_OBJECT_RECORD_DELIMITER, Type.STRING, null, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_OBJECT_RECORD_DELIMITER, CONFIG_GROUP_COS, 8, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_OBJECT_RECORD_DELIMITER)
+
         .define(CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS, Type.INT, -1, Importance.HIGH,
-                CONFIG_DOCUMENTATION_COS_OBJECT_DEADLINE_SECONDS, CONFIG_GROUP_COS, 8, Width.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_OBJECT_DEADLINE_SECONDS, CONFIG_GROUP_COS, 9, Width.MEDIUM,
                 CONFIG_DISPLAY_COS_OBJECT_DEADLINE_SECONDS)
 
         .define(CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS, Type.INT, -1, Importance.HIGH,
-                CONFIG_DOCUMENTATION_COS_OBJECT_INTERVAL_SECONDS, CONFIG_GROUP_COS, 9, Width.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_OBJECT_INTERVAL_SECONDS, CONFIG_GROUP_COS, 10, Width.MEDIUM,
                 CONFIG_DISPLAY_COS_OBJECT_INTERVAL_SECONDS)
 
         .define(CONFIG_NAME_COS_ENDPOINTS_URL, Type.STRING, CONFIG_VALUE_COS_ENDPOINTS_URL, Importance.LOW,
-                CONFIG_DOCUMENTATION_COS_ENDPOINTS_URL, CONFIG_GROUP_COS, 10, Width.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_ENDPOINTS_URL, CONFIG_GROUP_COS, 11, Width.MEDIUM,
                 CONFIG_DISPLAY_COS_ENDPOINTS_URL);
 
     public COSSinkConnectorConfig(ConfigDef definition, Map<?, ?> originals) {
