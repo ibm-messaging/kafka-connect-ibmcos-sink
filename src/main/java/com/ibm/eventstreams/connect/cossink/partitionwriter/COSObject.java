@@ -45,7 +45,7 @@ class COSObject {
 
     COSObject(String recordDelimiter) {
         if (recordDelimiter != null) {
-            LOG.trace("> setting recordDelimiter to: {} of length", recordDelimiter, recordDelimiter.length());
+            LOG.trace("> setting recordDelimiter to: {} of length {}", recordDelimiter, recordDelimiter.length());
             this.recordSeparatorBytes = recordDelimiter.getBytes();
         } else {
             this.recordSeparatorBytes = new byte[0];

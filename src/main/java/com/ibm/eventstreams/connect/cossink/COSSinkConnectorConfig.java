@@ -71,7 +71,7 @@ public class COSSinkConnectorConfig extends AbstractConfig {
 
     static final String CONFIG_NAME_COS_OBJECT_RECORD_DELIMITER = "cos.object.record.delimiter";
     private static final String CONFIG_DOCUMENTATION_COS_OBJECT_RECORD_DELIMITER =
-            "The delimited to separate records within a single object storage object.";
+            "The delimiter to separate records within a single object storage object.";
     private static final String CONFIG_DISPLAY_COS_OBJECT_RECORD_DELIMITER = "Delimiter per Record";
 
     static final String CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS = "cos.object.deadline.seconds";
