@@ -28,5 +28,5 @@ public interface PartitionWriterFactory {
      * @return
      */
     PartitionWriter newPartitionWriter(
-            final Bucket bucket, final CompletionCriteriaSet completionCriteira, final String recordDelimiter);
+            final Bucket bucket, final CompletionCriteriaSet completionCriteira, final Boolean recordDelimiter);
 }

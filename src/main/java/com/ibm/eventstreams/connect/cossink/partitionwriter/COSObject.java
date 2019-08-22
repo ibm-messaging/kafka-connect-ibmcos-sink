@@ -43,10 +43,10 @@ class COSObject {
     private Long lastOffset;
     private final byte[] recordSeparatorBytes;
 
-    COSObject(String recordDelimiter) {
-        if (recordDelimiter != null) {
-            LOG.trace("> setting recordDelimiter to: {} of length {}", recordDelimiter, recordDelimiter.length());
-            this.recordSeparatorBytes = recordDelimiter.getBytes();
+    COSObject(Boolean delimitRecords) {
+        if (delimitRecords) {
+            LOG.trace("> delimiting records within object using new line");
+            this.recordSeparatorBytes = "\n".getBytes();
         } else {
             this.recordSeparatorBytes = new byte[0];
         }

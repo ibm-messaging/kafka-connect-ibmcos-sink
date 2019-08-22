@@ -55,7 +55,7 @@ public class COSSinkTask extends SinkTask {
 
     private Bucket bucket;
     private int recordsPerObject;
-    private String recordDelimiter;
+    private boolean delimitRecords;
     private int deadlineSec;
     private int intervalSec;
 
@@ -105,7 +105,7 @@ public class COSSinkTask extends SinkTask {
         bucket = client.bucket(bucketName);
 
         recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS);
-        recordDelimiter = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORD_DELIMITER);
+        delimitRecords = connectorConfig.getBoolean(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORD_DELIMITER_NL);
 
         deadlineSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS);
         intervalSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS);
@@ -150,7 +150,7 @@ public class COSSinkTask extends SinkTask {
             if (assignedWriters.containsKey(tp)) {
                 LOG.info("A PartitionWriter already exists for {}", tp);
             } else {
-                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, buildCompletionCriteriaSet(), recordDelimiter);
+                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, buildCompletionCriteriaSet(), delimitRecords);
                 assignedWriters.put(tp, pw);
             }
         }

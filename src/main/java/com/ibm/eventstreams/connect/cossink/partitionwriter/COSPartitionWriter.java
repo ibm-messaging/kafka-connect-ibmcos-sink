@@ -35,15 +35,15 @@ class COSPartitionWriter extends RequestProcessor<RequestType> implements Partit
 
     private COSObject osObject;
     private Long objectCount = 0L;
-    private String recordDelimiter = null;
+    private Boolean delimitRecords;
 
     private AtomicReference<Long> lastOffset = new AtomicReference<>();
 
-    COSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria, final String recordDelimiter) {
+    COSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria, final Boolean delimitRecords) {
         super(RequestType.CLOSE);
         this.bucket = bucket;
         this.completionCriteria = completionCriteria;
-        this.recordDelimiter = recordDelimiter;
+        this.delimitRecords = delimitRecords;
     }
 
     @Override
@@ -83,7 +83,7 @@ class COSPartitionWriter extends RequestProcessor<RequestType> implements Partit
     }
 
     private void startObject(SinkRecord record) {
-        osObject = new COSObject(recordDelimiter);
+        osObject = new COSObject(delimitRecords);
         osObject.put(record);
         FirstResult result = completionCriteria.first(record, new AsyncCompleterImpl(this, objectCount));
         if (result == FirstResult.COMPLETE) {

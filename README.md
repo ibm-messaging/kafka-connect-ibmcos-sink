@@ -82,6 +82,8 @@ $ gradle shadowJar
 - `cos.object.records` _(optional)_ - The maximum number of Kafka records to
           combine into a object.
 
+- `cos.object.record.delimiter.nl` _(optional)_ - If set to true *(default false)* records within a single object will be separated by new line.
+
 - `cos.service.crn` _(required)_ - CRN for the Cloud Object Storage service instance.
 
 - `cos.endpoints.url` _(optional)_ - Endpoints URL for the Cloud Object Storage instance.
