@@ -66,7 +66,7 @@ public class COSSinkTaskTest {
     public void before() {
         MockitoAnnotations.initMocks(this);
 
-        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(Mockito.any(), Mockito.any()))
+        Mockito.when(mockPartitionWriterFactory.newPartitionWriter(Mockito.any(), Mockito.any(), Mockito.any()))
         .thenAnswer(new Answer<PartitionWriter>() {
             @Override
             public PartitionWriter answer(InvocationOnMock invocation) throws Throwable {

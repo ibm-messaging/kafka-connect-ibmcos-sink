@@ -41,8 +41,15 @@ class COSObject {
 
     private final List<SinkRecord> records = new LinkedList<>();
     private Long lastOffset;
+    private final byte[] recordSeparatorBytes;
 
-    COSObject() {
+    COSObject(Boolean delimitRecords) {
+        if (delimitRecords) {
+            LOG.trace("> delimiting records within object using new line");
+            this.recordSeparatorBytes = "\n".getBytes();
+        } else {
+            this.recordSeparatorBytes = new byte[0];
+        }
     }
 
     void put(SinkRecord record) {
@@ -58,18 +65,8 @@ class COSObject {
             throw new IllegalStateException("Attempting to write an empty object");
         }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (SinkRecord record : records) {
-            try {
-                baos.write(createValue(record));
-            } catch(IOException e) {
-                // Ignore, as it shouldn't be possible for a write to a ByteArrayOutputStream to
-                // raise this exception.
-            }
-        }
-
         final String key = createKey();
-        final byte[] value = baos.toByteArray();
+        final byte[] value = createStream();
         final ByteArrayInputStream bais = new ByteArrayInputStream(value);
         bucket.putObject(key, bais, createMetadata(key, value));
         LOG.trace("< write, key={}", key);
@@ -83,6 +80,21 @@ class COSObject {
         SinkRecord firstRecord = records.get(0);
         return String.format("%s/%d/%016d-%016d",
                 firstRecord.topic(), firstRecord.kafkaPartition(), firstRecord.kafkaOffset(), lastOffset);
+    }
+
+    byte[] createStream() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        for (SinkRecord record : records) {
+            try {
+                baos.write(createValue(record));
+                // will not write any byte unless there is something to write
+                baos.write(recordSeparatorBytes);
+            } catch(IOException e) {
+                // Ignore, as it shouldn't be possible for a write to a ByteArrayOutputStream to
+                // raise this exception.
+            }
+        }
+        return baos.toByteArray();
     }
 
     private static byte[] createValue(final SinkRecord record) {
