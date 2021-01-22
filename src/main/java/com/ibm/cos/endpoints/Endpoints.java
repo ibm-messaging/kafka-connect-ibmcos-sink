@@ -66,16 +66,22 @@ public class Endpoints {
         return singleSite;
     }
 
+    public static void main(String[] args) throws Exception {
+        Endpoints ep = fetch(args[0]);
+        System.out.println(ep.crossRegion());
+    }
+
     public static Endpoints fetch(String endpointsURL) throws IOException {
         final URL url = new URL(endpointsURL);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setInstanceFollowRedirects(true);
+        connection.setRequestProperty("User-Agent", "kafka-connect-ibmcos-sink");
         connection.setReadTimeout(15 * 1000);
 
         final int responseCode = connection.getResponseCode();
         if (responseCode < 200 || responseCode > 299) {
-            throw new IOException("Unable to retrieve endpoint information from: " + endpointsURL);
+            throw new IOException("Unable to retrieve endpoint information from: " + endpointsURL + ", got code: " + responseCode);
         }
 
         final JsonObject root = Json.parse(new InputStreamReader(connection.getInputStream())).asObject();
