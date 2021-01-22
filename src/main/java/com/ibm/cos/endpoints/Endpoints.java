@@ -66,11 +66,6 @@ public class Endpoints {
         return singleSite;
     }
 
-    public static void main(String[] args) throws Exception {
-        Endpoints ep = fetch(args[0]);
-        System.out.println(ep.crossRegion());
-    }
-
     public static Endpoints fetch(String endpointsURL) throws IOException {
         final URL url = new URL(endpointsURL);
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
