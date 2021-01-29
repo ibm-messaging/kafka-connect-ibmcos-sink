@@ -71,11 +71,12 @@ public class Endpoints {
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         connection.setInstanceFollowRedirects(true);
+        connection.setRequestProperty("User-Agent", "kafka-connect-ibmcos-sink");
         connection.setReadTimeout(15 * 1000);
 
         final int responseCode = connection.getResponseCode();
         if (responseCode < 200 || responseCode > 299) {
-            throw new IOException("Unable to retrieve endpoint information from: " + endpointsURL);
+            throw new IOException("Unable to retrieve endpoint information from: " + endpointsURL + ", got code: " + responseCode);
         }
 
         final JsonObject root = Json.parse(new InputStreamReader(connection.getInputStream())).asObject();

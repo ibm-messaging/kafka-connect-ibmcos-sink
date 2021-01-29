@@ -16,6 +16,8 @@
 package com.ibm.cos.endpoints;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -55,6 +57,17 @@ public class EndpointsTest {
         assertEquals(3, endpoints.crossRegion().size());
         assertEquals(6, endpoints.regional().size());
         assertEquals(12, endpoints.singleSite().size());
+    }
+
+    @Test
+    public void testFetchPublicEndpoints() throws IOException {
+        String url = "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints";
+        Endpoints endpoints = Endpoints.fetch(url);
+        assertEquals("iampap.cloud.ibm.com", endpoints.iamPolicy());
+        assertEquals("iam.cloud.ibm.com", endpoints.iamToken());
+        assertFalse(endpoints.crossRegion().isEmpty());
+        assertFalse(endpoints.regional().isEmpty());
+        assertFalse(endpoints.singleSite().isEmpty());
     }
 
     @Test(expected=IOException.class)
