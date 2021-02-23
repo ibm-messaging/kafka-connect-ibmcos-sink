@@ -24,6 +24,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.ibm.eventstreams.connect.cossink.parquet.COSParquetConfig;
+import com.ibm.eventstreams.connect.cossink.parquet.ParquetRecordWriterProvider;
+import io.confluent.connect.avro.AvroData;
+import io.confluent.connect.avro.AvroDataConfig;
+import io.confluent.connect.storage.format.RecordWriter;
+import io.confluent.connect.storage.format.RecordWriterProvider;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
 import org.apache.kafka.connect.sink.SinkRecord;
@@ -59,7 +65,7 @@ class COSObject {
         LOG.trace("< put");
     }
 
-    void write(final Bucket bucket) {
+    void writeString(final Bucket bucket) {
         LOG.trace("> write, records.size={} lastOffset={}", records.size(), lastOffset);
         if (records.isEmpty()) {
             throw new IllegalStateException("Attempting to write an empty object");
@@ -70,6 +76,32 @@ class COSObject {
         final ByteArrayInputStream bais = new ByteArrayInputStream(value);
         bucket.putObject(key, bais, createMetadata(key, value));
         LOG.trace("< write, key={}", key);
+    }
+
+    void writeParquet(final Bucket bucket, final COSParquetConfig cosParquetConfig) {
+        LOG.trace("> write parquet, records.size={} lastOffset={}", records.size(), lastOffset);
+        if (records.isEmpty()) {
+            throw new IllegalStateException("Attempting to write an empty Parquet object");
+        }
+
+        final String key = createKey();
+
+        AvroDataConfig avroDataConfig = new AvroDataConfig.Builder()
+                .with("enhanced.avro.schema.support", cosParquetConfig.isEnhancedSchemaSupport())
+                .with("schemas.cache.config", cosParquetConfig.getSchemaCacheSize())
+                .build();
+        AvroData avroDataHelper = new AvroData(avroDataConfig);
+
+        RecordWriterProvider<COSParquetConfig> recordWriterProvider = new ParquetRecordWriterProvider(bucket, avroDataHelper);
+        RecordWriter recordWriter = recordWriterProvider.getRecordWriter(cosParquetConfig, key);
+
+        for (SinkRecord record : records) {
+            recordWriter.write(record);
+        }
+
+        recordWriter.commit();
+
+        LOG.trace("< write parquet, key={}", key);
     }
 
     Long lastOffset() {

@@ -21,12 +21,28 @@ plugins {
 
 repositories {
    mavenCentral()
+   maven {
+     url "http://packages.confluent.io/maven/"
+   }
 }
 
 dependencies {
   compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
   compile 'com.ibm.cos:ibm-cos-java-sdk:2.4.5'
   compile 'org.apache.kafka:connect-api:2.2.1'
+  compile group: 'org.apache.avro', name: 'avro', version: '1.8.1'
+  compile (group: 'io.confluent', name: 'kafka-connect-avro-converter', version: '5.3.2') {
+    exclude group: 'org.apache.avro', module: 'avro'
+  }
+  compile (group: 'io.confluent', name: 'kafka-connect-storage-format', version: '5.3.2') {
+    exclude group: 'org.apache.avro', module: 'avro'
+  }
+  compile (group: 'org.apache.parquet', name: 'parquet-avro', version: '1.11.0') {
+    exclude group: 'org.apache.avro', module: 'avro'
+  }
+  compile (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.0') {
+    exclude group: 'org.apache.avro', module: 'avro'
+  }
 
   testCompile 'org.mockito:mockito-all:1.10.19'
   testCompile 'junit:junit:4.12'

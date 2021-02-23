@@ -91,6 +91,71 @@ public class COSSinkConnectorConfig extends AbstractConfig {
     private static final String CONFIG_DISPLAY_COS_ENDPOINTS_URL = "Endpoints URL";
     private static final String CONFIG_VALUE_COS_ENDPOINTS_URL = "https://control.cloud-object-storage.cloud.ibm.com/v2/endpoints";
 
+    static final String CONFIG_NAME_COS_ENABLE_PARQUET = "cos.enable.parquet";
+    private static final String CONFIG_DOCUMENTATION_COS_ENABLE_PARQUET =
+            "Enable sending records in Parquet format to Cloud Object Storage.";
+    private static final String CONFIG_DISPLAY_COS_ENABLE_PARQUET = "COS Enable Parquet";
+
+    static final String CONFIG_NAME_COS_SCHEMA_REGISTRY_URL = "cos.schema.registry.url";
+    private static final String CONFIG_DOCUMENTATION_COS_SCHEMA_REGISTRY_URL =
+            "EventStream Schema Registry URL where the schema is stored.";
+    private static final String CONFIG_DISPLAY_COS_SCHEMA_REGISTRY_URL = "COS Schema Registry URL";
+
+    static final String CONFIG_NAME_COS_SCHEMA_REGISTRY_APIKEY = "cos.schema.registry.apikey";
+    private static final String CONFIG_DOCUMENTATION_COS_SCHEMA_REGISTRY_APIKEY =
+            "EventStream Schema Registry API Key to access schema.";
+    private static final String CONFIG_DISPLAY_COS_SCHEMA_REGISTRY_APIKEY = "COS Schema Registry API Key";
+
+    static final String CONFIG_NAME_COS_SCHEMA_SUBJECT = "cos.schema.subject";
+    private static final String CONFIG_DOCUMENTATION_COS_SCHEMA_SUBJECT =
+            "Avro schema subject name. It should have either key or value ending.";
+    private static final String CONFIG_DISPLAY_COS_SCHEMA_SUBJECT = "COS Schema Subject Name";
+
+    static final String CONFIG_NAME_COS_SCHEMA_VERSION = "cos.schema.version";
+    private static final String CONFIG_DOCUMENTATION_COS_SCHEMA_VERSION =
+            "Avro schema version. It should be an integer starting from 1.";
+    private static final String CONFIG_DISPLAY_COS_SCHEMA_VERSION = "COS Schema Version";
+
+    static final String CONFIG_NAME_COS_SCHEMA_CACHE_SIZE = "cos.schema.cache.size";
+    private static final String CONFIG_DOCUMENTATION_COS_SCHEMA_CACHE_SIZE =
+            "Size of Avro schema cache. Default to 1000.";
+    private static final String CONFIG_DISPLAY_COS_SCHEMA_CACHE_SIZE = "COS Schema Cache Size";
+
+    static final String CONFIG_NAME_COS_ENHANCED_AVRO_SCHEMA_SUPPORT = "cos.enhanced.avro.schema.support";
+    private static final String CONFIG_DOCUMENTATION_COS_ENHANCED_AVRO_SCHEMA_SUPPORT =
+            "Toggle for enabling/disabling enhanced avro schema support: Enum symbol preservation and Package Name awareness.";
+    private static final String CONFIG_DISPLAY_COS_ENHANCED_AVRO_SCHEMA_SUPPORT = "COS Enhanced Avro Schema Support";
+
+    static final String CONFIG_NAME_COS_PARQUET_OUTPUT_BUFFER_SIZE = "cos.parquet.output.buffer.size";
+    private static final String CONFIG_DOCUMENTATION_COS_PARQUET_OUTPUT_BUFFER_SIZE =
+            "Size of output stream buffer for writing parquet data.";
+    private static final String CONFIG_DISPLAY_COS_PARQUET_OUTPUT_BUFFER_SIZE = "COS Parquet Output Buffer Size";
+
+    static final String CONFIG_NAME_COS_PARQUET_WRITE_MODE = "cos.parquet.write.mode";
+    private static final String CONFIG_DOCUMENTATION_COS_PARQUET_WRITE_MODE =
+            "Write mode for parquet output.";
+    private static final String CONFIG_DISPLAY_COS_PARQUET_WRITE_MODE = "COS Parquet Write Mode";
+
+    static final String CONFIG_NAME_COS_PARQUET_COMPRESSION_CODEC = "cos.parquet.compression.codec";
+    private static final String CONFIG_DOCUMENTATION_COS_PARQUET_COMPRESSION_CODEC =
+            "Compression codec for parquet output.";
+    private static final String CONFIG_DISPLAY_COS_PARQUET_COMPRESSION_CODEC = "COS Parquet Compression Codec";
+
+    static final String CONFIG_NAME_COS_PARQUET_ROW_GROUP_SIZE = "cos.parquet.row.group.size";
+    private static final String CONFIG_DOCUMENTATION_COS_PARQUET_ROW_GROUP_SIZE =
+            "Block size threshold for parquet output.";
+    private static final String CONFIG_DISPLAY_COS_PARQUET_ROW_GROUP_SIZE = "COS Parquet Row Group Size";
+
+    static final String CONFIG_NAME_COS_PARQUET_PAGE_SIZE = "cos.parquet.page.size";
+    private static final String CONFIG_DOCUMENTATION_COS_PARQUET_PAGE_SIZE =
+            "Blocks are subdivided into pages for alignment and other purposes.";
+    private static final String CONFIG_DISPLAY_COS_PARQUET_PAGE_SIZE = "COS Parquet Page Size";
+
+    static final String CONFIG_NAME_COS_PARQUET_DICTIONARY_ENCODING = "cos.parquet.dictionary.encoding";
+    private static final String CONFIG_DOCUMENTATION_COS_PARQUET_DICTIONARY_ENCODING =
+            "Whether to use a dictionary to compress columns.";
+    private static final String CONFIG_DISPLAY_COS_PARQUET_DICTIONARY_ENCODING = "COS Parquet Dictionary Encoding";
+
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
         .define(CONFIG_NAME_COS_API_KEY, Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE, Importance.HIGH,
                 CONFIG_DOCUMENTATION_COS_API_KEY, CONFIG_GROUP_COS, 1, Width.MEDIUM,
@@ -141,7 +206,59 @@ public class COSSinkConnectorConfig extends AbstractConfig {
 
         .define(CONFIG_NAME_COS_ENDPOINTS_URL, Type.STRING, CONFIG_VALUE_COS_ENDPOINTS_URL, Importance.LOW,
                 CONFIG_DOCUMENTATION_COS_ENDPOINTS_URL, CONFIG_GROUP_COS, 11, Width.MEDIUM,
-                CONFIG_DISPLAY_COS_ENDPOINTS_URL);
+                CONFIG_DISPLAY_COS_ENDPOINTS_URL)
+
+        .define(CONFIG_NAME_COS_ENABLE_PARQUET, Type.BOOLEAN, false, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_ENABLE_PARQUET, CONFIG_GROUP_COS, 12, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_ENABLE_PARQUET)
+
+        .define(CONFIG_NAME_COS_SCHEMA_REGISTRY_URL, Type.STRING, "", Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_SCHEMA_REGISTRY_URL, CONFIG_GROUP_COS, 13, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_SCHEMA_REGISTRY_URL)
+
+        .define(CONFIG_NAME_COS_SCHEMA_REGISTRY_APIKEY, Type.STRING, "", Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_SCHEMA_REGISTRY_APIKEY, CONFIG_GROUP_COS, 14, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_SCHEMA_REGISTRY_APIKEY)
+
+        .define(CONFIG_NAME_COS_SCHEMA_SUBJECT, Type.STRING, "", Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_SCHEMA_SUBJECT, CONFIG_GROUP_COS, 15, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_SCHEMA_SUBJECT)
+
+        .define(CONFIG_NAME_COS_SCHEMA_VERSION, Type.INT, 1, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_SCHEMA_VERSION, CONFIG_GROUP_COS, 16, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_SCHEMA_VERSION)
+
+        .define(CONFIG_NAME_COS_SCHEMA_CACHE_SIZE, Type.INT, ConfigDef.NO_DEFAULT_VALUE, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_SCHEMA_CACHE_SIZE, CONFIG_GROUP_COS, 17, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_SCHEMA_CACHE_SIZE)
+
+        .define(CONFIG_NAME_COS_ENHANCED_AVRO_SCHEMA_SUPPORT, Type.BOOLEAN, false, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_ENHANCED_AVRO_SCHEMA_SUPPORT, CONFIG_GROUP_COS, 18, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_ENHANCED_AVRO_SCHEMA_SUPPORT)
+
+        .define(CONFIG_NAME_COS_PARQUET_OUTPUT_BUFFER_SIZE, Type.INT, 262144, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_PARQUET_OUTPUT_BUFFER_SIZE, CONFIG_GROUP_COS, 19, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_PARQUET_OUTPUT_BUFFER_SIZE)
+
+        .define(CONFIG_NAME_COS_PARQUET_WRITE_MODE, Type.STRING, "create", Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_PARQUET_WRITE_MODE, CONFIG_GROUP_COS, 20, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_PARQUET_WRITE_MODE)
+
+        .define(CONFIG_NAME_COS_PARQUET_COMPRESSION_CODEC, Type.STRING, "uncompressed", Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_PARQUET_COMPRESSION_CODEC, CONFIG_GROUP_COS, 21, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_PARQUET_COMPRESSION_CODEC)
+
+        .define(CONFIG_NAME_COS_PARQUET_ROW_GROUP_SIZE, Type.INT, 268435356, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_PARQUET_ROW_GROUP_SIZE, CONFIG_GROUP_COS, 22, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_PARQUET_ROW_GROUP_SIZE)
+
+        .define(CONFIG_NAME_COS_PARQUET_PAGE_SIZE, Type.INT, 65536, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_PARQUET_PAGE_SIZE, CONFIG_GROUP_COS, 23, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_PARQUET_PAGE_SIZE)
+
+        .define(CONFIG_NAME_COS_PARQUET_DICTIONARY_ENCODING, Type.BOOLEAN, true, Importance.MEDIUM,
+                CONFIG_DOCUMENTATION_COS_PARQUET_DICTIONARY_ENCODING, CONFIG_GROUP_COS, 24, Width.MEDIUM,
+                CONFIG_DISPLAY_COS_PARQUET_DICTIONARY_ENCODING);
 
     public COSSinkConnectorConfig(ConfigDef definition, Map<?, ?> originals) {
         super(definition, originals);
