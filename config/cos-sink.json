@@ -16,6 +16,20 @@
         "cos.object.deadline.seconds": "5",
         "cos.object.interval.seconds": "5",
         "cos.object.records": "5",
-        "cos.service.crn": "<COS_CRN>"
+        "cos.service.crn": "<COS_CRN>",
+
+        "cos.enable.parquet": false,
+        "cos.schema.registry.url": "<SCHEMA_REGISTRY_URL>",
+        "cos.schema.registry.apikey": "<SCHEMA_REGISTRY_APIKEY>",
+        "cos.schema.subject": "<SCHEMA_SUBJECT>",
+        "cos.schema.version": "<SCHEMA_VERSION>",
+        "cos.schema.cache.size": "1000",
+        "cos.enhanced.avro.schema.support": true,
+        "cos.parquet.output.buffer.size": "26214400",
+        "cos.parquet.write.mode": "create",
+        "cos.parquet.compression.codec": "snappy",
+        "cos.parquet.row.group.size": "268435356",
+        "cos.parquet.page.size": "65536",
+        "cos.parquet.dictionary.encoding": true
     }
 }

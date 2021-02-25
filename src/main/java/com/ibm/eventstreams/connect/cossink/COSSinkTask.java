@@ -185,7 +185,8 @@ public class COSSinkTask extends SinkTask {
             if (assignedWriters.containsKey(tp)) {
                 LOG.info("A PartitionWriter already exists for {}", tp);
             } else {
-                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, buildCompletionCriteriaSet(), delimitRecords);
+                PartitionWriter pw = pwFactory.newPartitionWriter(bucket,
+                        buildCompletionCriteriaSet(), delimitRecords, cosParquetConfig);
                 assignedWriters.put(tp, pw);
             }
         }
