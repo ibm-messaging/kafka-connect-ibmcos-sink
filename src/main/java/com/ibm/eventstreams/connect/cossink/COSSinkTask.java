@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.ibm.eventstreams.connect.cossink.parquet.COSParquetConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigException;
@@ -58,6 +59,9 @@ public class COSSinkTask extends SinkTask {
     private boolean delimitRecords;
     private int deadlineSec;
     private int intervalSec;
+
+    private COSParquetConfig cosParquetConfig;
+    private boolean enableParquet;
 
     // Connect framework requires no-value constructor.
     public COSSinkTask() {
@@ -118,6 +122,37 @@ public class COSSinkTask extends SinkTask {
                             "to a value that is greater than zero");
         }
 
+        enableParquet = connectorConfig.getBoolean(COSSinkConnectorConfig.CONFIG_NAME_COS_ENABLE_PARQUET);
+
+        if (enableParquet) {
+            cosParquetConfig = COSParquetConfig.newBuilder()
+                    .setSchemaRegistryUrl(connectorConfig.getString(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_SCHEMA_REGISTRY_URL))
+                    .setSchemaRegistryApiKey(connectorConfig.getString(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_SCHEMA_REGISTRY_APIKEY))
+                    .setSchemaSubject(connectorConfig.getString(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_SCHEMA_SUBJECT))
+                    .setSchemaVersion(connectorConfig.getInt(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_SCHEMA_VERSION))
+                    .setSchemaCacheSize(connectorConfig.getInt(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_SCHEMA_CACHE_SIZE))
+                    .setEnhancedSchemaSupport(connectorConfig.getBoolean(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_ENHANCED_AVRO_SCHEMA_SUPPORT))
+                    .setParquetBufferSize(connectorConfig.getInt(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_PARQUET_OUTPUT_BUFFER_SIZE))
+                    .setParquetWriteMode(connectorConfig.getString(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_PARQUET_WRITE_MODE))
+                    .setParquetCompressionCodec(connectorConfig.getString(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_PARQUET_COMPRESSION_CODEC))
+                    .setParquetRowGroupSize(connectorConfig.getInt(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_PARQUET_ROW_GROUP_SIZE))
+                    .setParquetPageSize(connectorConfig.getInt(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_PARQUET_PAGE_SIZE))
+                    .setParquetDictionaryEncoding(connectorConfig.getBoolean(
+                            COSSinkConnectorConfig.CONFIG_NAME_COS_PARQUET_DICTIONARY_ENCODING))
+                    .build();
+        }
+
         open(context.assignment());
         LOG.trace("< start");
     }
@@ -150,7 +185,8 @@ public class COSSinkTask extends SinkTask {
             if (assignedWriters.containsKey(tp)) {
                 LOG.info("A PartitionWriter already exists for {}", tp);
             } else {
-                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, buildCompletionCriteriaSet(), delimitRecords);
+                PartitionWriter pw = pwFactory.newPartitionWriter(bucket,
+                        buildCompletionCriteriaSet(), delimitRecords, cosParquetConfig);
                 assignedWriters.put(tp, pw);
             }
         }

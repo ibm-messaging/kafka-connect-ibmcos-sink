@@ -17,6 +17,7 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
 import com.ibm.cos.Bucket;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+import com.ibm.eventstreams.connect.cossink.parquet.COSParquetConfig;
 
 public interface PartitionWriterFactory {
 
@@ -27,6 +28,8 @@ public interface PartitionWriterFactory {
      *           have been read and can be written as an object storage object.
      * @return
      */
-    PartitionWriter newPartitionWriter(
-            final Bucket bucket, final CompletionCriteriaSet completionCriteira, final Boolean recordDelimiter);
+    PartitionWriter newPartitionWriter(final Bucket bucket,
+                                       final CompletionCriteriaSet completionCriteira,
+                                       final Boolean recordDelimiter,
+                                       final COSParquetConfig cosParquetConfig);
 }

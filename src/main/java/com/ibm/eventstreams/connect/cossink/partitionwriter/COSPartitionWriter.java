@@ -17,6 +17,7 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.ibm.eventstreams.connect.cossink.parquet.COSParquetConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +38,19 @@ class COSPartitionWriter extends RequestProcessor<RequestType> implements Partit
     private Long objectCount = 0L;
     private Boolean delimitRecords;
 
+    private COSParquetConfig cosParquetConfig;
+
     private AtomicReference<Long> lastOffset = new AtomicReference<>();
 
-    COSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria, final Boolean delimitRecords) {
+    COSPartitionWriter(final Bucket bucket,
+                       final CompletionCriteriaSet completionCriteria,
+                       final Boolean delimitRecords,
+                       final COSParquetConfig cosParquetConfig) {
         super(RequestType.CLOSE);
         this.bucket = bucket;
         this.completionCriteria = completionCriteria;
         this.delimitRecords = delimitRecords;
+        this.cosParquetConfig = cosParquetConfig;
     }
 
     @Override
@@ -76,7 +83,11 @@ class COSPartitionWriter extends RequestProcessor<RequestType> implements Partit
 
     private void writeObject() {
         objectCount++;
-        osObject.write(bucket);
+        if (cosParquetConfig == null) {
+            osObject.writeString(bucket);
+        } else {
+            osObject.writeParquet(bucket, cosParquetConfig);
+        }
         lastOffset.set(osObject.lastOffset());
         osObject = null;
         completionCriteria.complete();

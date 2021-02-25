@@ -17,6 +17,7 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
 import com.ibm.cos.Bucket;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+import com.ibm.eventstreams.connect.cossink.parquet.COSParquetConfig;
 
 public class COSPartitionWriterFactory implements PartitionWriterFactory {
 
@@ -24,8 +25,11 @@ public class COSPartitionWriterFactory implements PartitionWriterFactory {
     }
 
     @Override
-    public PartitionWriter newPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria, final Boolean delimitRecords) {
-        return new COSPartitionWriter(bucket, completionCriteria, delimitRecords);
+    public PartitionWriter newPartitionWriter(final Bucket bucket,
+                                              final CompletionCriteriaSet completionCriteria,
+                                              final Boolean delimitRecords,
+                                              final COSParquetConfig cosParquetConfig) {
+        return new COSPartitionWriter(bucket, completionCriteria, delimitRecords, cosParquetConfig);
     }
 
 }
