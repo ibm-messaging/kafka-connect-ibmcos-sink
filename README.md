@@ -25,7 +25,7 @@ Using this connector, you can:
 To build the connector, you must have the following installed:
 
 * [git](https://git-scm.com/)
-* [Gradle 4.0 or later](https://gradle.org/)
+* [Gradle 6.8 or later](https://gradle.org/)
 * Java 8 or later
 
 Clone the repository with the following command:
@@ -89,6 +89,38 @@ $ gradle shadowJar
 - `cos.endpoints.url` _(optional)_ - Endpoints URL for the Cloud Object Storage instance.
           Only set this in environments where a non-default set of endpoints is required.
 
+- `cos.writer.format` _(optional)_ - Determines the output format of files written to COS.
+          Can be "json" *(default)* or "parquet". It is recommended to set  `cos.object.record.delimiter.nl`
+          to "true" when JSON format is chosen. With Parquet the delimiter setting is silently
+          ignored.
+
+- `cos.writer.schema.uri` _(required if Parquet output format is selected)_ - Points to the Avro
+          schema of records to be written in the Parquet file. Currently only the `file` URI schema
+          is supported.
+
+- `cos.writer.parquet.buffer.size` _(optional)_ Specifies the size, in bytes, of the Parquet
+          output stream buffer. The value must be sufficient to accommodate the entire batch of
+          records as determined by `cos.object.deadline.seconds`, `cos.interval.seconds`, and 
+          `cos.object.records`. Default: 26214400 (25 Mib).
+
+- `cos.writer.parquet.write.mode` _(optional)_ Can be "create" _(default)_ or "overwrite". 
+          If "create" is specified and the file already exists, an exception will be raised.
+
+- `cos.writer.parquet.compression.codec` _(optional)_ Can be one of the following values:  
+          "none", "uncompressed", "snappy" _(default)_, "gzip", "lzo", "brotli", "lz4", "zstd".
+
+- `cos.writer.parquet.row.group.size` _(optional)_ Determines the Parquet file row group size in bytes.
+          Default value: 536870912 (512 Mib). 
+
+- `cos.writer.parquet.page.size` _(optional)_ Determines the Parquet file page size in bytes.
+          Default value: 65536 (64 Kib). 
+
+- `cos.writer.parquet.enable.dictionary` _(optional)_ Set to "false" to disable the column dictionaries.
+          Default: true.
+
+- `value.converter.cos.writer.schema.uri` _(required if Parquet output format is selected)_ - Must be 
+          set to the same value as `cos.writer.schema.uri`. 
+
 Note that while the configuration properties `cos.object.deadline.seconds`,
 `cos.interval.seconds`, and `cos.object.records` are all listed as optional,
 *at least one* of these properties *must* be set to a non-default value.
@@ -109,6 +141,7 @@ mytopic/1/0000000000017805-0000000000017809
 ```
 means this objects contains 5 Kafka records, offsets 17805 to 17809, from partition 1 of mytopic.
 
+When Parquet output format is selected the suffix `.parquet` is added to the object name.
 
 ## Combining multiple Kafka records into an object
 
