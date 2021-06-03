@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,18 +33,29 @@ class COSPartitionWriter extends RequestProcessor<RequestType> implements Partit
 
     private final Bucket bucket;
     private final CompletionCriteriaSet completionCriteria;
+    private AbstractConfig config = null;
+    private COSWritableObjectFactory objectFactory = null;
 
     private COSObject osObject;
     private Long objectCount = 0L;
-    private Boolean delimitRecords;
 
     private AtomicReference<Long> lastOffset = new AtomicReference<>();
 
-    COSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria, final Boolean delimitRecords) {
+    /**
+     * Constructor with extra properties passed using the config object
+     * 
+     * @param bucket COS bucket to write to.
+     * @param completionCriteria object completion criteria. Determines the batch size.
+     * @param delimitRecords if true, written objects will be delimited by new line characters.
+     * @param config AbstractConfig implementation carrying parameters for a specific 
+     *        type of object to be written.
+     */
+    COSPartitionWriter(final Bucket bucket, final CompletionCriteriaSet completionCriteria, final AbstractConfig config) {
         super(RequestType.CLOSE);
         this.bucket = bucket;
         this.completionCriteria = completionCriteria;
-        this.delimitRecords = delimitRecords;
+        this.config = config;
+        this.objectFactory = new COSWritableObjectFactory(this.config);
     }
 
     @Override
@@ -83,7 +95,7 @@ class COSPartitionWriter extends RequestProcessor<RequestType> implements Partit
     }
 
     private void startObject(SinkRecord record) {
-        osObject = new COSObject(delimitRecords);
+        osObject = this.objectFactory.create();
         osObject.put(record);
         FirstResult result = completionCriteria.first(record, new AsyncCompleterImpl(this, objectCount));
         if (result == FirstResult.COMPLETE) {

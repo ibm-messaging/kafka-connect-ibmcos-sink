@@ -1,5 +1,5 @@
 /*
- * Copyright 2019, 2021 IBM Corporation
+ * Copyright 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,19 @@
  */
 package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
-import com.ibm.cos.Bucket;
-import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+import org.apache.avro.Schema;
 
-import org.apache.kafka.common.config.AbstractConfig;
+/**
+ * Describes an interface of an Avro schema provider.
+ * 
+ * Schema providers are created by {@link com.ibm.eventstreams.connect.cossink.partitionwriter.SchemaProviderFactory}
+ * based on the connector configuration.
+ */
+public interface SchemaProvider {
 
-public class COSPartitionWriterFactory implements PartitionWriterFactory {
-
-    @Override
-    public PartitionWriter newPartitionWriter(
-        final Bucket bucket, final CompletionCriteriaSet completionCriteria, 
-        final AbstractConfig config) {
-        return new COSPartitionWriter(bucket, completionCriteria, config);
-    }
-
+  /**
+   * Obtain the schema.
+   * @return Avro schema.
+   */
+  public Schema getSchema();
 }

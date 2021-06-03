@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,25 +40,26 @@ import com.ibm.cloud.objectstorage.SdkClientException;
 import com.ibm.cloud.objectstorage.services.s3.model.ObjectMetadata;
 import com.ibm.cloud.objectstorage.services.s3.model.PutObjectResult;
 import com.ibm.cos.Bucket;
+import com.ibm.eventstreams.connect.cossink.COSSinkConnectorConfig;
 import com.ibm.eventstreams.connect.cossink.completion.AsyncCompleter;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
 import com.ibm.eventstreams.connect.cossink.completion.FirstResult;
 import com.ibm.eventstreams.connect.cossink.completion.NextResult;
 import com.ibm.eventstreams.connect.cossink.completion.ObjectCompletionCriteria;
 
-public class COSPartitionWriterTest {
+public class COSPartitionWriterTest extends AbstractTest {
 
     @Mock ObjectCompletionCriteria criteria;
     private MockBucket mockBucket;
     private CompletionCriteriaSet criteriaSet;
-    private COSPartitionWriter writer;
+    private static COSPartitionWriter writer;
 
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         mockBucket = new MockBucket();
         criteriaSet = new CompletionCriteriaSet();
-        writer = new COSPartitionWriter(mockBucket, criteriaSet, false);
+        writer = new COSPartitionWriter(mockBucket, criteriaSet, new COSSinkConnectorConfig(testConfigMap()));
     }
 
     private SinkRecord sinkRecord(
@@ -106,6 +107,7 @@ public class COSPartitionWriterTest {
     // the SinkRecord passed into put().
     @Test
     public void putFirstReturnsComplete() {
+        
         Mockito.when(criteria.first(Mockito.any(), Mockito.any())).thenReturn(FirstResult.COMPLETE);
         criteriaSet.add(criteria);
 
@@ -197,7 +199,7 @@ public class COSPartitionWriterTest {
                 new Answer<FirstResult>() {
             @Override
             public FirstResult answer(InvocationOnMock invocation) throws Throwable {
-                completerRef.set(invocation.getArgumentAt(1, AsyncCompleter.class));
+                completerRef.set(invocation.getArgument(1, AsyncCompleter.class));
                 return FirstResult.INCOMPLETE;
             }
         });
@@ -220,7 +222,7 @@ public class COSPartitionWriterTest {
                 new Answer<FirstResult>() {
             @Override
             public FirstResult answer(InvocationOnMock invocation) throws Throwable {
-                completerRef.set(invocation.getArgumentAt(1, AsyncCompleter.class));
+                completerRef.set(invocation.getArgument(1, AsyncCompleter.class));
                 return FirstResult.INCOMPLETE;
             }
         });
@@ -288,7 +290,7 @@ public class COSPartitionWriterTest {
                 new Answer<FirstResult>() {
             @Override
             public FirstResult answer(InvocationOnMock invocation) throws Throwable {
-                completerRef.set(invocation.getArgumentAt(1, AsyncCompleter.class));
+                completerRef.set(invocation.getArgument(1, AsyncCompleter.class));
                 return FirstResult.INCOMPLETE;
             }
         });
@@ -319,7 +321,7 @@ public class COSPartitionWriterTest {
         writer.put(sinkRecord("topic", 0, new byte[]{0}, expectedOffset - 2));
         writer.put(sinkRecord("topic", 0, new byte[]{1}, expectedOffset - 1));
 
-        assertEquals(new Long(expectedOffset), writer.preCommit());
+        assertEquals(Long.valueOf(expectedOffset), writer.preCommit());
     }
 
     // Calling preCommit() again, before another object has been written should return null to
@@ -333,7 +335,7 @@ public class COSPartitionWriterTest {
         writer.put(sinkRecord("topic", 0, new byte[]{0}, expectedOffset - 2));
         writer.put(sinkRecord("topic", 0, new byte[]{1}, expectedOffset - 1));
 
-        assertEquals(new Long(expectedOffset), writer.preCommit());
+        assertEquals(Long.valueOf(expectedOffset), writer.preCommit());
         assertNull(writer.preCommit());
     }
 }

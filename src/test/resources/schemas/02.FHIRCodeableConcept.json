@@ -1,0 +1,10 @@
+{
+  "namespace": "org.alvearie.hdtl.model.fhir",
+  "type": "record",
+  "name": "CodeableConcept",
+  "doc": "Represents a FHIR CodeableConcept type",
+  "fields": [
+    {"name": "coding", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.Coding"}], "default": null},
+    {"name": "text", "type": ["null", "string"], "default": null}
+]
+}

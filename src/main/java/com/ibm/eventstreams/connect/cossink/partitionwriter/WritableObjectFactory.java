@@ -1,5 +1,5 @@
 /*
- * Copyright 2019, 2021 IBM Corporation
+ * Copyright 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,16 @@
  */
 package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
-import com.ibm.cos.Bucket;
-import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+/**
+ * Abstraction of a factory producing {@code WritableObject} implementations.
+ * 
+ */
+public interface WritableObjectFactory<T> {
 
-import org.apache.kafka.common.config.AbstractConfig;
-
-public class COSPartitionWriterFactory implements PartitionWriterFactory {
-
-    @Override
-    public PartitionWriter newPartitionWriter(
-        final Bucket bucket, final CompletionCriteriaSet completionCriteria, 
-        final AbstractConfig config) {
-        return new COSPartitionWriter(bucket, completionCriteria, config);
-    }
+  /**
+   * Produce a {@code WritableObject} instance based on the configuration.
+   * @return configured {@code WritableObject}
+   */
+  public T create();
 
 }

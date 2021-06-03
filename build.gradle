@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,87 @@
  *  limitations under the License.
  */
 plugins {
-  id 'com.github.johnrengelman.shadow' version '4.0.3'
+  id 'com.github.johnrengelman.shadow' version '6.1.0'
   id 'java'
   id 'eclipse'
+  id 'jacoco'
+  id 'org.sonarqube' version '2.7.1'
 }
 
 repositories {
    mavenCentral()
+   jcenter()
+   maven {
+     url "http://packages.confluent.io/maven/"
+   }
 }
 
 dependencies {
-  compile 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
-  compile 'com.ibm.cos:ibm-cos-java-sdk:2.4.5'
-  compile 'org.apache.kafka:connect-api:2.2.1'
+  implementation 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
+  implementation 'com.ibm.cos:ibm-cos-java-sdk:2.9.1'
+  implementation 'org.apache.kafka:connect-api:2.2.1'
+  implementation group: 'org.apache.avro', name: 'avro', version: '1.10.2'
+  implementation (group: 'io.confluent', name: 'kafka-connect-avro-converter', version: '5.5.2') {
+      exclude group: 'org.apache.avro', module: 'avro'
+  }
+  implementation (group: 'io.confluent', name: 'kafka-connect-storage-format', version: '5.5.2') {
+      exclude group: 'org.apache.avro', module: 'avro'
+  }
+  implementation (group: 'org.apache.parquet', name: 'parquet-avro', version: '1.11.0') {
+      exclude group: 'org.apache.avro', module: 'avro'
+  }
+  implementation (group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.3.0') {
+      exclude group: 'org.apache.avro', module: 'avro'
+  }
+  implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.28'
 
-  testCompile 'org.mockito:mockito-all:1.10.19'
-  testCompile 'junit:junit:4.12'
-  testCompile 'com.squareup.okhttp3:mockwebserver:3.9.+'
+  testImplementation "org.mockito:mockito-core:3.+"
+  testImplementation 'junit:junit:4.12'
+  testImplementation 'com.squareup.okhttp3:mockwebserver:3.9.+'
 }
 
-eclipse.project {
-  natures 'org.springsource.ide.eclipse.gradle.core.nature'
+eclipse{
+  project {
+    natures 'org.springsource.ide.eclipse.gradle.core.nature'
+  }
+  classpath {
+      defaultOutputDir = file('build')
+      file {
+      whenMerged {
+        def lib = entries.find { it.path.contains 'kafka-connect-avro-data-5.5.2.jar'}
+        lib.sourcePath = fileReference(file('libs/kafka-connect-avro-data-5.5.2-sources.jar'))
+      }
+    }
+  }
 }
+
 
 shadowJar {
-   classifier = 'all'
-   version = '1.0.0'
+   archiveClassifier.set('all')
+   archiveVersion.set('1.0.0')
+  archiveBaseName.set('ibm-cos-sink-connector')
+}
+
+
+test {
+    finalizedBy jacocoTestReport // report is always generated after tests run
+}
+jacocoTestReport {
+    dependsOn test // tests are required to run before generating the report
+    reports {
+      xml.enabled true
+    }
+}
+
+allprojects {
+    tasks.register("downloadDependencies", Copy) { Copy copy ->
+        copy.into project.layout.buildDirectory.dir("dependencies")
+        copy.from {
+            configurations.matching { Configuration c ->
+                c.isCanBeResolved()
+            }.collect { Configuration c ->
+                c.resolve()
+            }.flatten().unique()
+        }
+    }
 }

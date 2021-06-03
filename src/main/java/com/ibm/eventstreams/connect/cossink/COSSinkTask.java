@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,9 +55,9 @@ public class COSSinkTask extends SinkTask {
 
     private Bucket bucket;
     private int recordsPerObject;
-    private boolean delimitRecords;
     private int deadlineSec;
     private int intervalSec;
+    private COSSinkConnectorConfig connectorConfig;
 
     // Connect framework requires no-value constructor.
     public COSSinkTask() {
@@ -92,7 +92,7 @@ public class COSSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> props) {
         LOG.trace("> start, props={}", props);
-        COSSinkConnectorConfig connectorConfig = new COSSinkConnectorConfig(props);
+        connectorConfig = new COSSinkConnectorConfig(props);
         final Password apiKey = connectorConfig.getPassword(COSSinkConnectorConfig.CONFIG_NAME_COS_API_KEY);
         final String bucketLocation = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_LOCATION);
         final String bucketName = connectorConfig.getString(COSSinkConnectorConfig.CONFIG_NAME_COS_BUCKET_NAME);
@@ -105,7 +105,6 @@ public class COSSinkTask extends SinkTask {
         bucket = client.bucket(bucketName);
 
         recordsPerObject = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORDS);
-        delimitRecords = connectorConfig.getBoolean(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_RECORD_DELIMITER_NL);
 
         deadlineSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_DEADLINE_SECONDS);
         intervalSec = connectorConfig.getInt(COSSinkConnectorConfig.CONFIG_NAME_COS_OBJECT_INTERVAL_SECONDS);
@@ -150,7 +149,7 @@ public class COSSinkTask extends SinkTask {
             if (assignedWriters.containsKey(tp)) {
                 LOG.info("A PartitionWriter already exists for {}", tp);
             } else {
-                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, buildCompletionCriteriaSet(), delimitRecords);
+                PartitionWriter pw = pwFactory.newPartitionWriter(bucket, buildCompletionCriteriaSet(), connectorConfig);
                 assignedWriters.put(tp, pw);
             }
         }
