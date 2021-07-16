@@ -55,8 +55,8 @@ public class EndpointsTest {
         assertEquals("iampap.cloud.ibm.com", endpoints.iamPolicy());
         assertEquals("iam.cloud.ibm.com", endpoints.iamToken());
         assertEquals(3, endpoints.crossRegion().size());
-        assertEquals(6, endpoints.regional().size());
-        assertEquals(12, endpoints.singleSite().size());
+        assertEquals(8, endpoints.regional().size());
+        assertEquals(13, endpoints.singleSite().size());
     }
 
     @Test
