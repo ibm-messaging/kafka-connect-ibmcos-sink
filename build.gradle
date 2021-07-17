@@ -37,9 +37,6 @@ dependencies {
   implementation (group: 'io.confluent', name: 'kafka-connect-avro-converter', version: '5.5.2') {
       exclude group: 'org.apache.avro', module: 'avro'
   }
-  implementation (group: 'io.confluent', name: 'kafka-connect-storage-format', version: '5.5.2') {
-      exclude group: 'org.apache.avro', module: 'avro'
-  }
   implementation (group: 'org.apache.parquet', name: 'parquet-avro', version: '1.11.0') {
       exclude group: 'org.apache.avro', module: 'avro'
   }
