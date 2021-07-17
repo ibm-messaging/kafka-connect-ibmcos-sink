@@ -25,13 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.confluent.connect.avro.AvroData;
-import io.confluent.connect.storage.format.RecordWriter;
 
 /**
- * An implementation of {@link io.confluent.connect.storage.format.RecordWriter} that
- * writes records as a Parquet object to COS
+ * This class writes records as a Parquet object to COS
  */
-class ParquetRecordWriter implements RecordWriter {
+class ParquetRecordWriter {
   private static final Logger LOG = LoggerFactory.getLogger(ParquetRecordWriter.class);
   private final ParquetWriter<GenericRecord> parquetWriter;
   private final AvroData avroHelper;
@@ -50,7 +48,6 @@ class ParquetRecordWriter implements RecordWriter {
    * Write record as Parquet to COS
    * @param record record to be written to COS (format: SinkRecord)
    */
-  @Override
   public void write(SinkRecord record) {
       LOG.debug("Sink record: {}", record);
       Object value = avroHelper.fromConnectData(record.valueSchema(), record.value());
@@ -62,9 +59,8 @@ class ParquetRecordWriter implements RecordWriter {
   }
 
   /**
-   * Called when commit method is executed
+   * Gracefully close the writer
    */
-  @Override
   public void close() {
       try {
         commit();
@@ -77,9 +73,8 @@ class ParquetRecordWriter implements RecordWriter {
   }
 
   /**
-   * Called when write operation completes
+   * A no-op, called when write operation completes
    */
-  @Override
   public void commit() {
       LOG.trace("> commit");
   }

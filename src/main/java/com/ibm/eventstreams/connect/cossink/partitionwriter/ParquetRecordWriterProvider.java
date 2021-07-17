@@ -34,15 +34,11 @@ import org.slf4j.LoggerFactory;
 
 import io.confluent.connect.avro.AvroData;
 import io.confluent.connect.avro.AvroDataConfig;
-import io.confluent.connect.storage.format.RecordWriter;
-import io.confluent.connect.storage.format.RecordWriterProvider;
 
 /**
- * An implementation of {@link io.confluent.connect.storage.format.RecordWriterProvider}
- * that is used by COSParquetObject to to instantiate {@link io.confluent.connect.storage.format.RecordWriter}s
- * when it's time to write buffered records.
+ * A provider of ParquetRecordWriters used by COSParquetObject to write buffered records.
  */
-public class ParquetRecordWriterProvider implements RecordWriterProvider<Bucket> {
+public class ParquetRecordWriterProvider {
 
   private static final Logger LOG = LoggerFactory.getLogger(ParquetRecordWriterProvider.class);
   private static final String EXTENSION = ".parquet";
@@ -93,7 +89,6 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider<Bucket>
     );
   }
 
-  @Override
   public String getExtension() {
       return EXTENSION;
   }
@@ -106,10 +101,9 @@ public class ParquetRecordWriterProvider implements RecordWriterProvider<Bucket>
    * 
    * @param cosAvroParquetConfig: Configuration parameters to write parquet output
    * @param filename: File name generated from createKeys() in COSObject
-   * @return RecordWriter that produces Parquet output
+   * @return ParquetRecordWriter that produces Parquet output
    */
-  @Override
-  public RecordWriter getRecordWriter(Bucket bucket, String filename) {
+  public ParquetRecordWriter getRecordWriter(Bucket bucket, String filename) {
     try {
       OutputFile outFile = new COSOutputFile(bucket, filename, this.bufferSize);
 

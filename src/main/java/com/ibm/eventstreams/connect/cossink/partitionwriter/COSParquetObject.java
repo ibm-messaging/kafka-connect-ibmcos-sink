@@ -21,18 +21,15 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.confluent.connect.storage.format.RecordWriter;
-import io.confluent.connect.storage.format.RecordWriterProvider;
-
 /**
  * Represents a WritableObject instance capable of writing Parquet files.
  */
 public class COSParquetObject extends COSObject {
   
   private static final Logger LOG = LoggerFactory.getLogger(COSParquetObject.class);
-  private RecordWriterProvider<Bucket> recWriterProvider;
+  private ParquetRecordWriterProvider recWriterProvider;
 
-  public COSParquetObject(RecordWriterProvider<Bucket> recWriterProvider) {
+  public COSParquetObject(ParquetRecordWriterProvider recWriterProvider) {
     super(false);
     this.recWriterProvider = recWriterProvider;
   }
@@ -50,7 +47,7 @@ public class COSParquetObject extends COSObject {
     }
 
     final String key = createKey();
-    RecordWriter writer = recWriterProvider.getRecordWriter(bucket, key);
+    ParquetRecordWriter writer = recWriterProvider.getRecordWriter(bucket, key);
     for (SinkRecord record : records) {
       writer.write(record);
     }
