@@ -1,0 +1,10 @@
+{
+  "namespace": "org.alvearie.hdtl.model.fhir",
+  "type": "record",
+  "name": "Period",
+  "doc": "Represents a FHIR CodeableConcept type",
+  "fields": [
+    {"name": "start", "type": ["null", "string"], "doc": "Starting time with inclusive boundary; if present, must be earlier than end"},
+    {"name": "end", "type": ["null", "string"], "doc": "End time with inclusive boundary, if not ongoing; if present, must be later than start"}
+  ]
+}

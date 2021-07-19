@@ -1,0 +1,65 @@
+{
+  "namespace": "org.alvearie.hdtl.model.fhir",
+  "type": "record",
+  "name": "AuditEvent",
+  "doc": "Record representing a FHIR AuditEvent resource",
+  "fields": [
+    {"name": "resourceType", "type": {"type": "enum", "name": "AuditEventResourceType", "symbols": ["AuditEvent"]}},
+    {"name": "id", "type": ["null", "string"], "doc": "From Resource"},
+    {"name": "meta", "type": ["null", {"type": "record", "name": "ResourceMeta", "fields": [
+      {"name": "versionId", "type": ["null", "string"], "doc": "Version specific identifier"},
+      {"name": "lastUpdated", "type": ["null", "string"], "doc": "Instant"},
+      {"name": "source", "type": ["null", "string"], "doc": "Version specific identifier"},
+      {"name": "profile", "type": ["null", {"type": "array", "items": "string"}], "doc": "List of canonical URIs"},
+      {"name": "security", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.Coding"}], "doc": "Security labels"},
+      {"name": "tag", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.Coding"}], "doc": "Resource tags"}
+    ]}]},
+    {"name": "implicitRules", "type": ["null", "string"], "doc": "URI"},
+    {"name": "language", "type": ["null", "string"]},
+    {"name": "text", "type": ["null", "string"], "doc": "DomainResource.text"},
+    {"name": "contained", "type": ["null", "string"], "doc": "DomainResource.contained, actually an array"},
+    {"name": "type", "type": {"type": "org.alvearie.hdtl.model.fhir.Coding"}, "doc": "Type/identifier of event"},
+    {"name": "subtype", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.Coding"}], "doc": "More specific type/id for the event"},
+    {"name": "action", "type": ["null", "string"], "doc": "Code of action performed during the event"},
+    {"name": "period", "type": ["null", {"type": "org.alvearie.hdtl.model.fhir.Period"}], "doc": "When the activity occurred"},
+    {"name": "recorded", "type": "string", "doc": "Time when the event was recorded"},
+    {"name": "outcome", "type": ["null", "string"], "doc": "Whether the event succeeded or failed"},
+    {"name": "outcomeDesc", "type": ["null", "string"], "doc": "Description of the event outcome"},
+    {"name": "purposeOfEvent", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.CodeableConcept"}], "doc": "The purposeOfUse of the event" },
+    {"name": "agent", "doc": "Actor involved in the event", "type": {"type": "array", "items": {"type": "record", "name": "Agent", "fields": [
+        {"name": "type", "doc": "How agent participated", "type": ["null", "org.alvearie.hdtl.model.fhir.CodeableConcept"] },
+        {"name": "role", "doc": "Agent role in the event", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.CodeableConcept" }] },
+        {"name": "who", "doc": "Identifier of who", "type": ["null", "org.alvearie.hdtl.model.fhir.Reference"]},
+        {"name": "altId", "doc": "Alternative user identity", "type": ["null", "string"]},
+        {"name": "name", "doc": "Human friendly name for the agent", "type": ["null", "string"]},
+        {"name": "requestor", "doc": "Whether user is initiator", "type": "boolean"},
+        {"name": "location", "doc": "Reference to a Location resource", "type": ["null", "org.alvearie.hdtl.model.fhir.Reference"]},
+        {"name": "policy", "doc": "Policy that authorized event; URI", "type": ["null", {"type": "array", "items": "string" }] },
+        {"name": "media", "doc": "Type of media", "type": ["null", "org.alvearie.hdtl.model.fhir.Coding"]},
+        {"name": "network", "doc": "Logical network location for application activity", "type": ["null", {"type": "record", "name": "NetworkAddress", "fields": [
+          {"name": "address", "type": ["null", "string"]},
+          {"name": "type", "doc": "Address type", "type": ["null", "string"]}
+        ]}]},
+        {"name": "purposeOfUse", "doc": "Reason given for this user", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.CodeableConcept" }] }
+    ]}}},
+    {"name": "source", "doc": "Audit Event Reporter", "type": {"type": "record", "name": "Reporter", "fields": [
+      {"name": "site", "doc": "Logical source location within the enterprise", "type": ["null", "string"]},
+      {"name": "observer", "doc": "The identity of source detecting the event", "type": "org.alvearie.hdtl.model.fhir.Reference"},
+      {"name": "type", "doc": "The type of source where event originated", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.Coding"}]}
+    ]}},
+    {"name": "entity", "doc": "Data or objects used", "type": ["null", {"type": "array", "items": {"type": "record", "name": "Entity", "fields": [
+      {"name": "what", "doc": "Specific instance of resource", "type": ["null", "org.alvearie.hdtl.model.fhir.Reference"]},
+      {"name": "type", "doc": "The type of entity involved", "type": ["null", "org.alvearie.hdtl.model.fhir.Coding"]},
+      {"name": "role", "doc": "What role the entity played", "type": ["null", "org.alvearie.hdtl.model.fhir.Coding"]},
+      {"name": "lifecycle", "doc": "Life-cycle stage for the entity", "type": ["null", "org.alvearie.hdtl.model.fhir.Coding"]},
+      {"name": "securityLabel", "doc": "Security labels on the entity", "type": ["null", {"type": "array", "items": "org.alvearie.hdtl.model.fhir.Coding"}]},
+      {"name": "name", "doc": "Descriptor for entity; must NOT be present if query is present", "type": ["null", "string"]},
+      {"name": "description", "doc": "descriptive text", "type": ["null", "string"]},
+      {"name": "query", "doc": "Query parameters, base64-encoded. Must NOT be present if name is present", "type": ["null", "string"]},
+      {"name": "detail", "doc": "Additional Information about the entity", "type": ["null", {"type": "array", "items": {"type": "record", "name": "EntityDetail", "fields": [
+        {"name": "type", "doc": "Name of the property", "type": "string"},
+        {"name": "valueString", "doc": "Property value; must NOT be present if valueBase64Binary is present", "type": ["null", "string"]},
+        {"name": "valueBase64Binary", "doc": "Property value; must NOT be present if valueString is present", "type": ["null", "string"]}
+      ]}}]}
+    ]}}]}
+]}

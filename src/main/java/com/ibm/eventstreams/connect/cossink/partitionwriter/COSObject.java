@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,18 +33,18 @@ import org.slf4j.LoggerFactory;
 import com.ibm.cloud.objectstorage.services.s3.model.ObjectMetadata;
 import com.ibm.cos.Bucket;
 
-class COSObject {
+class COSObject implements WritableObject {
     private static final Logger LOG = LoggerFactory.getLogger(COSObject.class);
 
     private static final Charset UTF8 = StandardCharsets.UTF_8;
     private static final byte[] EMPTY = new byte[0];
 
-    private final List<SinkRecord> records = new LinkedList<>();
-    private Long lastOffset;
+    protected final List<SinkRecord> records = new LinkedList<>();
+    protected Long lastOffset;
     private final byte[] recordSeparatorBytes;
 
     COSObject(Boolean delimitRecords) {
-        if (delimitRecords) {
+        if (Boolean.TRUE.equals(delimitRecords)) {
             LOG.trace("> delimiting records within object using new line");
             this.recordSeparatorBytes = "\n".getBytes();
         } else {
@@ -52,14 +52,16 @@ class COSObject {
         }
     }
 
-    void put(SinkRecord record) {
+    @Override
+    public void put(SinkRecord record) {
         LOG.trace("> put, {}-{} offset={}", record.topic(), record.kafkaPartition(), record.kafkaOffset());
         records.add(record);
         lastOffset = record.kafkaOffset();
         LOG.trace("< put");
     }
-
-    void write(final Bucket bucket) {
+    
+    @Override
+    public void write(final Bucket bucket) {
         LOG.trace("> write, records.size={} lastOffset={}", records.size(), lastOffset);
         if (records.isEmpty()) {
             throw new IllegalStateException("Attempting to write an empty object");
@@ -72,7 +74,8 @@ class COSObject {
         LOG.trace("< write, key={}", key);
     }
 
-    Long lastOffset() {
+    @Override
+    public Long lastOffset() {
         return lastOffset;
     }
 

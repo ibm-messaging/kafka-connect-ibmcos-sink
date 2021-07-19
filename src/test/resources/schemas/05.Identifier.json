@@ -1,0 +1,14 @@
+{
+  "namespace": "org.alvearie.hdtl.model.fhir",
+  "type": "record",
+  "name": "Identifier",
+  "doc": "A numeric or alphanumeric string that is associated with a single object or entity within a given system",
+  "fields": [
+    {"name": "use", "type": ["null",  {"type": "enum", "name": "IdentifierType", "symbols": ["usual","official","temp","secondary","old"]}]},
+    {"name": "type", "doc": "Description of the identifier", "type": ["null","org.alvearie.hdtl.model.fhir.CodeableConcept"]},
+    {"name": "system", "doc": "The namespace for the identifier value", "type": ["null","string"]},
+    {"name": "value", "doc": "Unique value", "type": ["null","string"]},
+    {"name": "period", "doc": "Unique value", "type": ["null","org.alvearie.hdtl.model.fhir.Period"]},
+    {"name": "assigner", "doc": "Reference to Organization that issued the identifier", "type": ["null","string"]}
+  ]
+}

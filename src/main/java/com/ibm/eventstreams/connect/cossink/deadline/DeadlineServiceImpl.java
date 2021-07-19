@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,20 +26,11 @@ public class DeadlineServiceImpl implements DeadlineService {
 
     @Override
     public DeadlineCanceller schedule(DeadlineListener listener, long time, TimeUnit unit, Object context) {
-        final Future<?> future = scheduledExecutor.schedule(new Runnable() {
-            @Override
-            public void run() {
-                listener.deadlineReached(context);
-            }
+        final Future<?> future = scheduledExecutor.schedule(
+            () -> listener.deadlineReached(context),
+            time, unit);
 
-        }, time, unit);
-
-        return new DeadlineCanceller() {
-            @Override
-            public void cancel() {
-                future.cancel(false);
-            }
-        };
+        return () -> future.cancel(false);
     }
 
     @Override

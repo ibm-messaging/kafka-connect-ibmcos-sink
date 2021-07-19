@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,12 @@ public class Endpoint {
 
     private final String publicEndpoint;
     private final String privateEndpoint;
+    private final String directEndpoint;
 
-    private Endpoint(final String publicEndpoint, final String privateEndpoint) {
+    private Endpoint(final String publicEndpoint, final String privateEndpoint, final String directEndpoint) {
         this.publicEndpoint = publicEndpoint;
         this.privateEndpoint = privateEndpoint;
+        this.directEndpoint = directEndpoint;
     }
 
     public String publicEndpoint() {
@@ -36,13 +38,18 @@ public class Endpoint {
         return privateEndpoint;
     }
 
+    public String directEndpoint() {
+        return directEndpoint;
+    }
+
     static Endpoint parse(final String name, final JsonObject json) {
         final String publicEndpoint = parseValue(name, json.get("public").asObject());
         final String privateEndpoint = parseValue(name, json.get("private").asObject());
+        final String directEndpoint = parseValue(name, json.get("direct").asObject());
         if (publicEndpoint == null || privateEndpoint == null) {
             return null;
         }
-        return new Endpoint(publicEndpoint, privateEndpoint);
+        return new Endpoint(publicEndpoint, privateEndpoint, directEndpoint);
     }
 
     private static String parseValue(String name, JsonObject json) {
@@ -81,11 +88,16 @@ public class Endpoint {
                 return false;
         } else if (!publicEndpoint.equals(other.publicEndpoint))
             return false;
+        if (directEndpoint == null) {
+            if (other.directEndpoint != null)
+                return false;
+        } else if (!directEndpoint.equals(other.directEndpoint))
+            return false;
         return true;
     }
 
     @Override
     public String toString() {
-        return "public=" + publicEndpoint + ", private=" + privateEndpoint;
+        return "public=" + publicEndpoint + ", private=" + privateEndpoint + ", direct=" + directEndpoint;
     }
 }

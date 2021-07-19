@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ public class EndpointTest {
         Endpoint usEndpoint = fromFile("us");
         assertEquals("s3.private.us.cloud-object-storage.appdomain.cloud", usEndpoint.privateEndpoint());
         assertEquals("s3.us.cloud-object-storage.appdomain.cloud", usEndpoint.publicEndpoint());
+        assertEquals("s3.direct.us.cloud-object-storage.appdomain.cloud", usEndpoint.directEndpoint());
     }
 
     private Endpoint fromFile(String name) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,11 @@ import com.ibm.cos.endpoints.Endpoints;
 
 public class ClientFactoryImpl implements ClientFactory {
 
-    private static Endpoints endpoints;
-
+    
     @Override
     public Client newClient(String cosUrl, String apiKey, String serviceCRN, String bucketLocation, String bucketResiliency, String endpointType)
     throws ClientFactoryException {
+        Endpoints endpoints;
         try {
             endpoints = Endpoints.fetch(cosUrl);
             SDKGlobalConfiguration.IAM_ENDPOINT = "https://" + endpoints.iamToken() + "/oidc/token";
