@@ -1,0 +1,13 @@
+{
+  "namespace": "org.alvearie.hdtl.model.fhir",
+  "type": "record",
+  "name": "Coding",
+  "doc": "Represents a FHIR Coding type",
+  "fields": [
+    {"name": "system", "type": ["null", "string"], "default": null},
+    {"name": "version", "type": ["null", "string"], "default": null},
+    {"name": "code", "type": ["null", "string"], "default": null},
+    {"name": "display", "type": ["null", "string"], "default": null},
+    {"name": "userSelected", "type": ["null", "string"], "default": null}
+  ]
+}

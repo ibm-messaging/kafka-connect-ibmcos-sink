@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 IBM Corporation
+ * Copyright 2019, 2021 IBM Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,19 @@ package com.ibm.eventstreams.connect.cossink.partitionwriter;
 
 import com.ibm.cos.Bucket;
 import com.ibm.eventstreams.connect.cossink.completion.CompletionCriteriaSet;
+import org.apache.kafka.common.config.AbstractConfig;
 
 public interface PartitionWriterFactory {
 
     /**
-     * Creates a new {@code PartitionWriter} instance
+     * Creates a new {@code PartitionWriter} instance.
      * @param bucket the COS bucket that the writer will write into.
-     * @param a set of criteria used to determine when sufficient Kafka records
+     * @param completionCriteira a set of criteria used to determine when sufficient Kafka records
      *           have been read and can be written as an object storage object.
-     * @return
+     * @param config an instance of {@code AbstractConfig} with properties relevant for the {@code PartitionWriter}.
+     * @return an instance of {@code PartitionWriter}
      */
     PartitionWriter newPartitionWriter(
-            final Bucket bucket, final CompletionCriteriaSet completionCriteira, final Boolean recordDelimiter);
+            final Bucket bucket, final CompletionCriteriaSet completionCriteira, final AbstractConfig config);
+
 }

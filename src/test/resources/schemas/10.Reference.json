@@ -1,0 +1,12 @@
+{
+  "namespace": "org.alvearie.hdtl.model.fhir",
+  "type": "record",
+  "name": "Reference",
+  "doc": "FHIR resource reference",
+  "fields": [
+    {"name": "reference", "doc": "Literal reference, Relative, internal or absolute URL", "type": ["null", "string"]},
+    {"name": "type", "doc":"URI; Type the reference refers to (e.g. \"Patient\")", "type": ["null", "string"]},
+    {"name": "identifier", "doc": "Logical reference, when literal reference is not known", "type": ["null", "org.alvearie.hdtl.model.fhir.Identifier"]},
+    {"name": "display", "doc": "Text alternative for the resource","type": ["null", "string"]}
+  ]
+}
