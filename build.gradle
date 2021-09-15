@@ -25,7 +25,7 @@ repositories {
    mavenCentral()
    jcenter()
    maven {
-     url "http://packages.confluent.io/maven/"
+     url "https://packages.confluent.io/maven/"
    }
 }
 
@@ -69,7 +69,6 @@ eclipse{
 shadowJar {
    archiveClassifier.set('all')
    archiveVersion.set('1.0.0')
-  archiveBaseName.set('ibm-cos-sink-connector')
 }
 
 
