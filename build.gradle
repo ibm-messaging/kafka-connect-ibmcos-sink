@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 plugins {
-  id 'com.github.johnrengelman.shadow' version '6.1.0'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
   id 'java'
   id 'eclipse'
   id 'jacoco'
@@ -76,9 +76,9 @@ test {
     finalizedBy jacocoTestReport // report is always generated after tests run
 }
 jacocoTestReport {
-    dependsOn test // tests are required to run before generating the report
+    //dependsOn test // tests are required to run before generating the report
     reports {
-      xml.enabled true
+       xml.required = true
     }
 }
 
